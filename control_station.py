@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import time
 from functools import partial
+from os import path
 
 from PyQt4.QtCore import (QThread, Qt, pyqtSignal, pyqtSlot, QTimer)
 from PyQt4.QtGui import (QPixmap, QImage, QApplication, QWidget, QLabel, QMainWindow, QCursor)
@@ -116,6 +117,11 @@ class Gui(QMainWindow):
         TODO: NAME AND CONNECT BUTTONS AS NEEDED
         """
         self.ui.btn_estop.clicked.connect(self.estop)
+        self.ui.btn_exec.clicked.connect(self.execute)
+        self.ui.btn_task1.clicked.connect(self.operation)
+        self.ui.btn_task2.clicked.connect(self.record)
+        self.ui.btn_task3.clicked.connect(self.opex)
+        self.ui.btn_task4.clicked.connect(self.opplay)
         self.ui.btnUser1.setText("Calibrate")
         self.ui.btnUser1.clicked.connect(partial(self.sm.set_next_state, "calibrate"))
         self.ui.sldrBase.valueChanged.connect(self.sliderChange)
@@ -202,6 +208,32 @@ class Gui(QMainWindow):
     def estop(self):
         self.rexarm.estop = True
         self.sm.set_next_state("estop")
+
+    def execute(self):
+        self.sm.set_next_state("execute")
+        self.rexarm.pause(5)
+
+    def operation(self):
+        if path.exists("op_joints.csv"):
+            os.remove("op_joints.csv")
+        self.sm.set_next_state("operation")
+
+    def opex(self):
+        self.sm.set_next_state("idle")
+
+    def opplay(self):
+        self.sm.set_next_state("opplay")
+
+    def record(self):
+        if self.sm.current_state == "operation" :
+            rec_joints = self.rexarm.get_positions()
+            strec = str(rec_joints)[1:-1]+"\n"
+            if path.exists("op_joints.csv"):
+                with open('op_joints.csv','a') as f:
+                    f.write(strec)
+            else :
+                with open('op_joints.csv','w') as f:
+                    f.write(strec)
 
     def sliderChange(self):
         """ 

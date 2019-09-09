@@ -1,6 +1,6 @@
 import time
 import numpy as np
-
+import csv 
 """
 TODO: Add states and state functions to this class
         to implement all of the required logic for the armlab
@@ -29,16 +29,44 @@ class StateMachine():
             if(self.next_state == "estop"):
                 self.estop()
 
+        if(self.current_state == "execute"):
+            if(self.next_state == "idle"):
+                self.idle()                
+            if(self.next_state == "estop"):
+                self.estop()
+
         if(self.current_state == "idle"):
             if(self.next_state == "manual"):
                 self.manual()
             if(self.next_state == "idle"):
                 self.idle()
+            if(self.next_state == "execute"):
+                self.execute()    
             if(self.next_state == "estop"):
                 self.estop()
             if(self.next_state == "calibrate"):
                 self.calibrate()
-                
+            if(self.next_state == "operation"):
+                self.operation()
+            if(self.next_state == "opplay"):
+                self.opplay()    
+        
+        if(self.current_state == "operation"):
+            if(self.next_state == "idle"):
+                self.idle()
+            if(self.next_state == "execute"):
+                self.execute()    
+            if(self.next_state == "estop"):
+                self.estop()
+            if(self.next_state == "calibrate"):
+                self.calibrate()
+
+        if(self.current_state == "opplay"):
+            if(self.next_state == "idle"):
+                self.idle()
+        
+        
+
         if(self.current_state == "estop"):
             self.next_state = "estop"
             self.estop()  
@@ -104,3 +132,43 @@ class StateMachine():
 
         self.status_message = "Calibration - Completed Calibration"
         time.sleep(1)
+    
+    def execute(self) :
+        execute_states= np.array([[ 0.0, 0.0, 0.0, 0.0, 0.0],
+                                  [ 1.0, 0.8, 1.0, 0.5, 1.0],
+                                  [-1.0,-0.8,-1.0,-0.5, -1.0],
+                                  [-1.0, 0.8, 1.0, 0.5, 1.0],
+                                  [1.0, -0.8,-1.0,-0.5, -1.0],
+                                  [ 0.0, 0.0, 0.0, 0.0, 0.0]])
+        execute_states.tolist()
+        self.status_message = "State: Execute - Following Set Path"
+        self.current_state = "execute"
+        for i,_ in enumerate(execute_states) :
+            self.rexarm.set_positions(execute_states[i])
+            self.rexarm.pause(1)
+        self.rexarm.get_feedback()
+        self.next_state = "idle"
+
+
+    def operation(self):
+        self.status_message = "Operation - Recording User Positions"
+        self.current_state = "operation"
+        self.rexarm.disable_torque()
+        self.rexarm.get_feedback()
+
+
+    def opplay(self):
+        self.status_message = "Operation Play- Following saved positions"
+        self.current_state = "opplay"
+        exec_joints = []
+        with open("op_joints.csv") as f:
+            csv_reader = csv.reader(f, delimiter = ",")
+            for r in csv_reader :
+                temp = np.array([float(o) for o in r])
+                exec_joints.append(temp)
+        #print(exec_joints)
+        for i,_ in enumerate(exec_joints) :
+            self.rexarm.set_positions(exec_joints[i])
+            self.rexarm.pause(1)
+        self.rexarm.get_feedback()
+        self.next_state = "idle"
