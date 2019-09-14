@@ -276,6 +276,7 @@ class Gui(QMainWindow):
 
         x = QWidget.mapFromGlobal(self,QCursor.pos()).x()
         y = QWidget.mapFromGlobal(self,QCursor.pos()).y()
+        count=0
         if ((x < MIN_X) or (x >= MAX_X) or (y < MIN_Y) or (y >= MAX_Y)):
             self.ui.rdoutMousePixels.setText("(-,-,-)")
             self.ui.rdoutMouseWorld.setText("(-,-,-)")
@@ -285,7 +286,22 @@ class Gui(QMainWindow):
             if(self.kinect.currentDepthFrame.any() != 0):
                 z = self.kinect.currentDepthFrame[y][x]
                 self.ui.rdoutMousePixels.setText("(%.0f,%.0f,%.0f)" % (x,y,z))
-                self.ui.rdoutMouseWorld.setText("(-,-,-)")
+                if self.sm.calibration_state()==True:
+                    pix_center=self.sm.pixel_center_loc()
+                    x=x-pix_center.item(0)
+                    y=pix_center.item(1)-y
+                    pixel_value=np.array([x,y])
+                    pixel_value=np.transpose(pixel_value)
+                    affine=self.sm.return_affine()
+                    affine=affine[0:2,0:2]  
+                    world_value=np.matmul(affine,pixel_value)
+
+                    Z = 0.1236 * np.tan(z/2842.5 + 1.1863)
+
+                    self.ui.rdoutMouseWorld.setText("(%.0f,%.0f,%.0f)" % (world_value.item(0),world_value.item(1),Z))
+                else:
+                    self.ui.rdoutMouseWorld.setText("(-,-,-)")
+
 
     def mousePressEvent(self, QMouseEvent):
         """ 

@@ -1,10 +1,18 @@
 import time
 import numpy as np
+import cv2
 import csv 
 """
 TODO: Add states and state functions to this class
         to implement all of the required logic for the armlab
 """
+
+affine_matrix_rgb=0
+affine_matrix_depth=0
+calibration_done=False
+pixel_center=0
+
+
 class StateMachine():
     def __init__(self, rexarm, planner, kinect):
         self.rexarm = rexarm
@@ -129,6 +137,92 @@ class StateMachine():
         print(self.kinect.depth_click_points)
 
         """TODO Perform camera calibration here"""
+
+        camMatrix = np.array([[562.04399308,0.00,327.78253347],[0.00,559.59009967,249.41949401],[0.00,0.00,1.00]])
+        distCoeffs = np.array([2.86261843e-01,-1.06215288e+00,-6.38736068e-04,-6.91259011e-04,1.42539697e+00])
+
+        # Hardcoding the edge coordinates of the board
+
+        world_coords = np.array([[-11.61,-12,0],[-11.61,12,0],[11.61,12,0],[11.61,-12,0]]) # inch
+        pixel_coords=self.kinect.rgb_click_points
+
+        # Converting the pixel coordinates assuming center of board as camera (0,0)
+        for i in range(4):
+            for j in range (2):
+                pixel_coords[i][j]=(-1)**j*(pixel_coords[i][j]-pixel_coords[4][j])
+
+        A=np.array([[pixel_coords[0][0], pixel_coords[0][1], 1, 0, 0, 0],
+                           [0, 0, 0, pixel_coords[0][0], pixel_coords[0][1], 1],
+                           [pixel_coords[1][0], pixel_coords[1][1], 1, 0, 0, 0],
+                           [0, 0, 0, pixel_coords[1][0], pixel_coords[1][1], 1],
+                           [pixel_coords[2][0], pixel_coords[2][1], 1, 0, 0, 0],
+                           [0, 0, 0, pixel_coords[2][0], pixel_coords[2][1], 1],
+                           [pixel_coords[3][0], pixel_coords[3][1], 1, 0, 0, 0],
+                           [0, 0, 0, pixel_coords[3][0], pixel_coords[3][1], 1]])
+
+        b=np.array([-29.5, -30.48, -29.5, 30.48,29.5,30.48, 29.5,-30.48])
+
+        x=(np.linalg.inv(A.T.dot(A))).dot(A.T).dot(b.T)
+        x_matrix=np.reshape(x,(2,3))
+
+        global affine_matrix_rgb
+        affine_matrix_rgb=np.vstack((x_matrix,[0,0,1]))
+
+        # To record the location of pixel center
+        global pixel_center
+        pixel_center=np.array([pixel_coords[4][0],pixel_coords[4][1]]) 
+        print (pixel_center)
+
+        global calibration_done
+
+
+        ###############################################################################
+
+        # Depth Camera Affine Matrix Calculation
+
+        # depth_coords=self.kinect.depth_click_points
+
+        # for i in range(4):
+        #     for j in range (2):
+        #         depth_coords[i][j]=(-1)**j*(depth_coords[i][j]-depth_coords[4][j])
+
+        # A=np.array([[depth_coords[0][0], depth_coords[0][1], 1, 0, 0, 0],
+        #                    [0, 0, 0, depth_coords[0][0], depth_coords[0][1], 1],
+        #                    [depth_coords[1][0], depth_coords[1][1], 1, 0, 0, 0],
+        #                    [0, 0, 0, depth_coords[1][0], depth_coords[1][1], 1],
+        #                    [depth_coords[2][0], depth_coords[2][1], 1, 0, 0, 0],
+        #                    [0, 0, 0, depth_coords[2][0], depth_coords[2][1], 1],
+        #                    [depth_coords[3][0], depth_coords[3][1], 1, 0, 0, 0],
+        #                    [0, 0, 0, depth_coords[3][0], depth_coords[3][1], 1]])
+
+        # b=np.array([-29.5, -30.48, -29.5, 30.48,29.5,30.48, 29.5,-30.48])
+
+        # x=(np.linalg.inv(A.T.dot(A))).dot(A.T).dot(b.T)
+        # x_matrix=np.reshape(x,(2,3))
+
+        # global affine_matrix_depth
+        # affine_matrix_depth=np.vstack((x_matrix,[0,0,1]))
+
+        # # If calibration has been done set value to True
+
+        calibration_done=True
+
+        self.next_state="idle"
+
+
+    def return_affine(self):
+        return affine_matrix_rgb
+
+    def calibration_state(self):
+        return calibration_done
+
+    def pixel_center_loc(self):
+        return pixel_center
+
+
+
+        # print(cv2.findHomography(pixel_coords,world_coords))
+
 
         self.status_message = "Calibration - Completed Calibration"
         time.sleep(1)
