@@ -295,10 +295,9 @@ class Gui(QMainWindow):
                     affine=self.sm.return_affine()
                     affine=affine[0:2,0:2]  
                     world_value=np.matmul(affine,pixel_value)
+                    Z = -0.197*float(z) + 142.772
 
-                    Z = 0.1236 * np.tan(z/2842.5 + 1.1863)
-
-                    self.ui.rdoutMouseWorld.setText("(%.0f,%.0f,%.0f)" % (world_value.item(0),world_value.item(1),Z))
+                    self.ui.rdoutMouseWorld.setText("(%.0f,%.0f,%.1f)" % (world_value.item(0),world_value.item(1),Z))
                 else:
                     self.ui.rdoutMouseWorld.setText("(-,-,-)")
 

@@ -143,9 +143,9 @@ class StateMachine():
 
         # Hardcoding the edge coordinates of the board
 
-        world_coords = np.array([[-11.61,-12,0],[-11.61,12,0],[11.61,12,0],[11.61,-12,0]]) # inch
-        pixel_coords=self.kinect.rgb_click_points
-
+        world_coords = np.array([[-11.61,-12.0,0.0],[-11.61,12.0,0.0],[11.61,12.0,0],[11.61,-12.0,0.0]]) # inch
+        pixel_coords = self.kinect.rgb_click_points
+        #new_pixel_coords = np.zeros(shape=(4,2),dtype=np.float32)
         # Converting the pixel coordinates assuming center of board as camera (0,0)
         for i in range(4):
             for j in range (2):
@@ -167,8 +167,35 @@ class StateMachine():
 
         global affine_matrix_rgb
         affine_matrix_rgb=np.vstack((x_matrix,[0,0,1]))
+        print('Affine Trans Matrix is:', affine_matrix_rgb)
 
-        # To record the location of pixel center
+
+        rgb_coords = self.kinect.rgb_click_points
+        rgb_coords = rgb_coords[0:4,:]
+        depth_coords = self.kinect.depth_click_points
+        depth_coords = depth_coords[0:4,:]
+        print(rgb_coords,depth_coords)
+        rgb_coords = rgb_coords.astype('float32')
+        depth_coords = depth_coords.astype('float32')
+        dep2rgb = cv2.getPerspectiveTransform(depth_coords, rgb_coords)
+        cv2.wrap
+        #dep2rgt2 = cv2.estimateRigidTransform(depth_coords, rgb_coords, 1)
+        print(dep2rgb)
+        #print(dep2rgt2)
+        ''' 
+        new_pixel_coords.astype(np.float32)
+        world_coords.astype(np.float64)
+        # print(new_pixel_coords)
+        # print(type(new_pixel_coords),type(world_coords))
+        ret, rotvec, transvec = cv2.solvePnP(world_coords,new_pixel_coords,camMatrix,distCoeffs)
+        rotmat = cv2.Rodrigues(rotvec)
+        print(rotmat, transvec)
+        affine1 = np.concatenate((rotmat,transvec),axis=1)
+        affinecv2 = np.concatenate((affine1,np.array([0,0,0,1])), axis=0)
+        print(affine1)
+        print(affinecv2)
+        '''
+        #To record the location of pixel center
         global pixel_center
         pixel_center=np.array([pixel_coords[4][0],pixel_coords[4][1]]) 
         print (pixel_center)
