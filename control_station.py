@@ -288,15 +288,29 @@ class Gui(QMainWindow):
                 self.ui.rdoutMousePixels.setText("(%.0f,%.0f,%.0f)" % (x,y,z))
                 if self.sm.calibration_state()==True:
                     pix_center=self.sm.pixel_center_loc()
+
+                    # X and Y locations in the RGB space in pixels
                     x=x-pix_center.item(0)
                     y=pix_center.item(1)-y
+
+                    # Extracting affine transform between rgb and depth
+                    affine_rgb2depth=self.sm.return_correction_affine()
+
+                    # Preparing pixel matrix for transform
                     pixel_value=np.array([x,y])
                     pixel_value=np.transpose(pixel_value)
-                    affine=self.sm.return_affine()
-                    affine=affine[0:2,0:2]  
-                    world_value=np.matmul(affine,pixel_value)
-                    Z = -0.197*float(z) + 142.772
 
+                    # Extrinsic Matrix
+                    affine=self.sm.return_affine()
+                    affine=affine[0:2,0:2]
+
+                    world_value=np.matmul(affine,pixel_value)
+                    rgb_pt = np.array([pixel_value.item(0),pixel_value.item(1),1])
+                    depth_value=np.matmul(affine_rgb2depth,rgb_pt)
+                    #print(depth_value)
+                    z = self.kinect.currentDepthFrame[int(depth_value.item(1))][int(depth_value.item(0))]
+                    Z = 12.36 * np.tan(float(z)/2842.5 + 1.1863)
+                    # -0.197*float(z) + 142.772 
                     self.ui.rdoutMouseWorld.setText("(%.0f,%.0f,%.1f)" % (world_value.item(0),world_value.item(1),Z))
                 else:
                     self.ui.rdoutMouseWorld.setText("(-,-,-)")

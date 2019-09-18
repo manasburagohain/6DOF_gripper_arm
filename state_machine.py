@@ -8,9 +8,10 @@ TODO: Add states and state functions to this class
 """
 
 affine_matrix_rgb=0
-affine_matrix_depth=0
+affine_rgb2depth=0
 calibration_done=False
 pixel_center=0
+rgb2dep = 0
 
 
 class StateMachine():
@@ -152,13 +153,13 @@ class StateMachine():
                 pixel_coords[i][j]=(-1)**j*(pixel_coords[i][j]-pixel_coords[4][j])
 
         A=np.array([[pixel_coords[0][0], pixel_coords[0][1], 1, 0, 0, 0],
-                           [0, 0, 0, pixel_coords[0][0], pixel_coords[0][1], 1],
-                           [pixel_coords[1][0], pixel_coords[1][1], 1, 0, 0, 0],
-                           [0, 0, 0, pixel_coords[1][0], pixel_coords[1][1], 1],
-                           [pixel_coords[2][0], pixel_coords[2][1], 1, 0, 0, 0],
-                           [0, 0, 0, pixel_coords[2][0], pixel_coords[2][1], 1],
-                           [pixel_coords[3][0], pixel_coords[3][1], 1, 0, 0, 0],
-                           [0, 0, 0, pixel_coords[3][0], pixel_coords[3][1], 1]])
+                    [0, 0, 0, pixel_coords[0][0], pixel_coords[0][1], 1],
+                    [pixel_coords[1][0], pixel_coords[1][1], 1, 0, 0, 0],
+                    [0, 0, 0, pixel_coords[1][0], pixel_coords[1][1], 1],
+                    [pixel_coords[2][0], pixel_coords[2][1], 1, 0, 0, 0],
+                    [0, 0, 0, pixel_coords[2][0], pixel_coords[2][1], 1],
+                    [pixel_coords[3][0], pixel_coords[3][1], 1, 0, 0, 0],
+                    [0, 0, 0, pixel_coords[3][0], pixel_coords[3][1], 1]])
 
         b=np.array([-29.5, -30.48, -29.5, 30.48,29.5,30.48, 29.5,-30.48])
 
@@ -167,21 +168,60 @@ class StateMachine():
 
         global affine_matrix_rgb
         affine_matrix_rgb=np.vstack((x_matrix,[0,0,1]))
-        print('Affine Trans Matrix is:', affine_matrix_rgb)
+        #print('Affine Trans Matrix is:', affine_matrix_rgb)
 
 
         rgb_coords = self.kinect.rgb_click_points
         rgb_coords = rgb_coords[0:4,:]
         depth_coords = self.kinect.depth_click_points
         depth_coords = depth_coords[0:4,:]
-        print(rgb_coords,depth_coords)
+
+
+
+        # print(rgb_coords,depth_coords)
+        # rgb_coords = rgb_coords.astype('float32')
+        # depth_coords = depth_coords.astype('float32')
+
+        
+        A=np.array([[rgb_coords[0][0], rgb_coords[0][1], 0, 0],
+                    [0, 0,  rgb_coords[0][0], rgb_coords[0][1]],
+                    [rgb_coords[1][0], rgb_coords[1][1], 0, 0],
+                    [0, 0, rgb_coords[1][0], rgb_coords[1][1]],
+                    [rgb_coords[2][0], rgb_coords[2][1], 0, 0],
+                    [0, 0,rgb_coords[2][0], rgb_coords[2][1]],
+                    [pixel_coords[3][0], rgb_coords[3][1], 0, 0],
+                    [0, 0, rgb_coords[3][0], rgb_coords[3][1]]])
+
+        b=np.array([depth_coords[0][0], depth_coords[0][1], depth_coords[1][0], depth_coords[1][1],depth_coords[2][0],depth_coords[2][1], depth_coords[3][0],depth_coords[3][1]])
+
+        x=(np.linalg.inv(A.T.dot(A))).dot(A.T).dot(b.T)
+        x_matrix=np.reshape(x,(2,2))
+
+        global affine_rgb2depth
+        #affine_rgb2depth=x_matrix
+        #print(affine_rgb2depth)  
+
+
+
+
+
+        global rgb2dep
+
         rgb_coords = rgb_coords.astype('float32')
         depth_coords = depth_coords.astype('float32')
-        dep2rgb = cv2.getPerspectiveTransform(depth_coords, rgb_coords)
-        cv2.wrap
+
+        affine_rgb2depth = cv2.getPerspectiveTransform(rgb_coords, depth_coords)
         #dep2rgt2 = cv2.estimateRigidTransform(depth_coords, rgb_coords, 1)
-        print(dep2rgb)
+        #print(rgb2dep)
         #print(dep2rgt2)
+
+
+       
+
+
+
+
+
         ''' 
         new_pixel_coords.astype(np.float32)
         world_coords.astype(np.float64)
@@ -239,6 +279,9 @@ class StateMachine():
 
     def return_affine(self):
         return affine_matrix_rgb
+
+    def return_correction_affine(self):
+        return affine_rgb2depth
 
     def calibration_state(self):
         return calibration_done
