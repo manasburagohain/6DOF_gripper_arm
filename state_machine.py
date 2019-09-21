@@ -1,7 +1,8 @@
 import time
 import numpy as np
 import cv2
-import csv 
+import csv
+from math import * 
 """
 TODO: Add states and state functions to this class
         to implement all of the required logic for the armlab
@@ -296,8 +297,44 @@ class StateMachine():
 
         self.status_message = "Calibration - Completed Calibration"
         time.sleep(1)
-    
-    def execute(self) :
+ 
+    def get_waypoints_wayvelos_from_path(path):
+        waypoints = []
+        wayvelos = []
+        for i in [0]:#range(len(path)-1):
+            # configuration constraints
+            Q_this = np.array(path[i])
+            Q_next = np.array(path[i+1])
+            V_this = np.zeros((1,len(path[i])))[0]
+            V_next = V_this
+            # time constraints
+            v_expected = 3 # secs
+            ts = 0.0;
+            tf = round(max(abs(Q_next-Q_this)/v_expected),2)
+            N = (tf-ts)/0.01
+            t = np.linspace(ts, tf, int(N), endpoint=True)
+            # for each DOF
+            for j in range(len(path[i])):
+                Qs = [Q_this[j]]
+                Qf = [Q_next[j]]
+                Vs = [V_this[j]]
+                Vf = [V_next[j]]
+                M = np.array([[1, ts, ts**2, ts**3],
+                              [0, 1,  2*ts, 3*(ts**2)],
+                              [1, tf, tf**2, tf**3],
+                              [0, 1,  2*tf, 3*(tf**2)]])
+                QV = np.array([Qs, Vs, Qf, Vf])
+                QV = QV.T
+                A = np.linalg.inv(M).dot(QV[0])
+                Qt = A[0]+A[1]*t+A[2]*np.power(t,2)+A[3]*np.power(t,3);
+                waypoints.append(Qt.tolist())
+                Vt = A[1]+2*A[2]*t+3*A[3]*np.power(t,2)
+                wayvelos.append(Vt.tolist())
+        waypoints = np.array(waypoints).T.tolist()
+        wayvelos = np.array(wayvelos).T.tolist()
+        return waypoints, wayvelos
+
+    def execute(self):
         execute_states= np.array([[ 0.0, 0.0, 0.0, 0.0, 0.0],
                                   [ 1.0, 0.8, 1.0, 0.5, 1.0],
                                   [-1.0,-0.8,-1.0,-0.5, -1.0],
@@ -307,12 +344,13 @@ class StateMachine():
         execute_states.tolist()
         self.status_message = "State: Execute - Following Set Path"
         self.current_state = "execute"
+        #execute_states, execute_velos = get_waypoints_wayvelos_from_path(execute_states)
         for i,_ in enumerate(execute_states) :
             self.rexarm.set_positions(execute_states[i])
+            #self.rexarm.set_speeds(execute_velos[i])
             self.rexarm.pause(1)
         self.rexarm.get_feedback()
         self.next_state = "idle"
-
 
     def operation(self):
         self.status_message = "Operation - Recording User Positions"
