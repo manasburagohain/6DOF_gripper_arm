@@ -317,22 +317,25 @@ class StateMachine():
         time.sleep(1)
  
     def get_waypoints_wayvelos_from_path(self,path):
-        waypoints = []
-        wayvelos = []
-        for i in [0]:#range(len(path)-1):
+        dof = len(path[0])
+        waypoints = [[]]*dof
+        wayvelos = [[]]*dof
+        for i in range(len(path)-1):
             # configuration constraints
             Q_this = np.array(path[i])
             Q_next = np.array(path[i+1])
             V_this = np.zeros((1,len(path[i])))[0]
             V_next = V_this
             # time constraints
-            v_expected = 100 # secs
+            v_expected = 1 # speed
             ts = 0.0;
-            tf = round(max(abs(Q_next-Q_this)/v_expected),2)
-            N = (tf-ts)/0.01
+            tf = round(max(abs(Q_next-Q_this)/v_expected),1)
+            print(tf)
+            N = (tf-ts)/0.1+1
             t = np.linspace(ts, tf, int(N), endpoint=True)
+            #print(t)
             # for each DOF
-            for j in range(len(path[i])):
+            for j in range(dof):
                 Qs = [Q_this[j]]
                 Qf = [Q_next[j]]
                 Vs = [V_this[j]]
@@ -345,9 +348,9 @@ class StateMachine():
                 QV = QV.T
                 A = np.linalg.inv(M).dot(QV[0])
                 Qt = A[0]+A[1]*t+A[2]*np.power(t,2)+A[3]*np.power(t,3);
-                waypoints.append(Qt.tolist())
+                waypoints[j]=waypoints[j]+Qt.tolist()
                 Vt = A[1]+2*A[2]*t+3*A[3]*np.power(t,2)
-                wayvelos.append(Vt.tolist())
+                wayvelos[j]=wayvelos[j]+Vt.tolist()
         waypoints = np.array(waypoints).T.tolist()
         wayvelos = np.array(wayvelos).T.tolist()
         return waypoints, wayvelos
@@ -362,11 +365,13 @@ class StateMachine():
         execute_states.tolist()
         self.status_message = "State: Execute - Following Set Path"
         self.current_state = "execute"
-        #execute_states, execute_velos = self.get_waypoints_wayvelos_from_path(execute_states)
+        execute_states, execute_velos = self.get_waypoints_wayvelos_from_path(execute_states)
+        #print(execute_states)
+        #print(execute_velos)
         for i,_ in enumerate(execute_states) :
             self.rexarm.set_positions(execute_states[i])
-            #self.rexarm.set_speeds(execute_velos[i])
-            self.rexarm.pause(1)
+            self.rexarm.set_speeds(execute_velos[i])
+            self.rexarm.pause(0.1)
         self.rexarm.get_feedback()
         self.next_state = "idle"
 
