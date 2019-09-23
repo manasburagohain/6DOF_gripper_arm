@@ -145,9 +145,9 @@ class StateMachine():
 
         # Hardcoding the edge coordinates of the board
 
-        world_coords = np.array([[-11.61,-12.0,0.0],[-11.61,12.0,0.0],[11.61,12.0,0],[11.61,-12.0,0.0]]) # inch
+        world_coords = np.array([[-31.22,-29.72,0.0],[-31.22,30.61,3.85],[29.46,30.61,7.7],[29.46,-29.72,11.55]]) # inch
         pixel_coords = self.kinect.rgb_click_points
-        #new_pixel_coords = np.zeros(shape=(4,2),dtype=np.float32)
+        new_pixel_coords = np.zeros(shape=(4,2),dtype=np.float32)
         # Converting the pixel coordinates assuming center of board as camera (0,0)
         for i in range(4):
             for j in range (2):
@@ -171,6 +171,24 @@ class StateMachine():
         affine_matrix_rgb=np.vstack((x_matrix,[0,0,1]))
         #print('Affine Trans Matrix is:', affine_matrix_rgb)
 
+        ##################
+        #Trying Solve PnP#
+        ##################
+        for i in range(4):
+            for j in range (2):
+                new_pixel_coords[i][j]=(-1)**j*(pixel_coords[i][j]-pixel_coords[4][j])
+
+        world_coords.astype(np.float64)
+        ret, rotvec, transvec = cv2.solvePnP(world_coords,new_pixel_coords,camMatrix,distCoeffs)
+        rotmat,jac = cv2.Rodrigues(rotvec)
+        extmat = np.column_stack((rotmat,transvec))
+        print(extmat)
+        extmat = np.vstack((extmat,np.array([0,0,0,1])))
+        #extmat=np.append(extmat,np.array([[0,0,0,1]]),axis=0)
+        #print(exttmat)
+        print(extmat)
+
+
 
         rgb_coords = self.kinect.rgb_click_points
         rgb_coords = rgb_coords[0:4,:]
@@ -184,19 +202,19 @@ class StateMachine():
         # depth_coords = depth_coords.astype('float32')
 
         
-        A=np.array([[rgb_coords[0][0], rgb_coords[0][1], 0, 0],
-                    [0, 0,  rgb_coords[0][0], rgb_coords[0][1]],
-                    [rgb_coords[1][0], rgb_coords[1][1], 0, 0],
-                    [0, 0, rgb_coords[1][0], rgb_coords[1][1]],
-                    [rgb_coords[2][0], rgb_coords[2][1], 0, 0],
-                    [0, 0,rgb_coords[2][0], rgb_coords[2][1]],
-                    [pixel_coords[3][0], rgb_coords[3][1], 0, 0],
-                    [0, 0, rgb_coords[3][0], rgb_coords[3][1]]])
+        # A=np.array([[rgb_coords[0][0], rgb_coords[0][1], 0, 0],
+        #             [0, 0,  rgb_coords[0][0], rgb_coords[0][1]],
+        #             [rgb_coords[1][0], rgb_coords[1][1], 0, 0],
+        #             [0, 0, rgb_coords[1][0], rgb_coords[1][1]],
+        #             [rgb_coords[2][0], rgb_coords[2][1], 0, 0],
+        #             [0, 0,rgb_coords[2][0], rgb_coords[2][1]],
+        #             [rgb_coords[3][0], rgb_coords[3][1], 0, 0],
+        #             [0, 0, rgb_coords[3][0], rgb_coords[3][1]]])
 
-        b=np.array([depth_coords[0][0], depth_coords[0][1], depth_coords[1][0], depth_coords[1][1],depth_coords[2][0],depth_coords[2][1], depth_coords[3][0],depth_coords[3][1]])
+        # b=np.array([depth_coords[0][0], depth_coords[0][1], depth_coords[1][0], depth_coords[1][1],depth_coords[2][0],depth_coords[2][1], depth_coords[3][0],depth_coords[3][1]])
 
-        x=(np.linalg.inv(A.T.dot(A))).dot(A.T).dot(b.T)
-        x_matrix=np.reshape(x,(2,2))
+        # x=(np.linalg.inv(A.T.dot(A))).dot(A.T).dot(b.T)
+        # x_matrix=np.reshape(x,(2,2))
 
         global affine_rgb2depth
         #affine_rgb2depth=x_matrix
@@ -211,7 +229,7 @@ class StateMachine():
         rgb_coords = rgb_coords.astype('float32')
         depth_coords = depth_coords.astype('float32')
 
-        affine_rgb2depth = cv2.getPerspectiveTransform(rgb_coords, depth_coords)
+        affine_rgb2depth = cv2.getPerspectiveTransform(rgb_coords, depth_coords) #changed to affine from perspective
         #dep2rgt2 = cv2.estimateRigidTransform(depth_coords, rgb_coords, 1)
         #print(rgb2dep)
         #print(dep2rgt2)
@@ -298,7 +316,7 @@ class StateMachine():
         self.status_message = "Calibration - Completed Calibration"
         time.sleep(1)
  
-    def get_waypoints_wayvelos_from_path(path):
+    def get_waypoints_wayvelos_from_path(self,path):
         waypoints = []
         wayvelos = []
         for i in [0]:#range(len(path)-1):
@@ -308,7 +326,7 @@ class StateMachine():
             V_this = np.zeros((1,len(path[i])))[0]
             V_next = V_this
             # time constraints
-            v_expected = 3 # secs
+            v_expected = 100 # secs
             ts = 0.0;
             tf = round(max(abs(Q_next-Q_this)/v_expected),2)
             N = (tf-ts)/0.01
@@ -344,7 +362,7 @@ class StateMachine():
         execute_states.tolist()
         self.status_message = "State: Execute - Following Set Path"
         self.current_state = "execute"
-        #execute_states, execute_velos = get_waypoints_wayvelos_from_path(execute_states)
+        #execute_states, execute_velos = self.get_waypoints_wayvelos_from_path(execute_states)
         for i,_ in enumerate(execute_states) :
             self.rexarm.set_positions(execute_states[i])
             #self.rexarm.set_speeds(execute_velos[i])
