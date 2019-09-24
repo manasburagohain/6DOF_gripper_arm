@@ -328,23 +328,20 @@ class StateMachine():
                                   [-1.0, 0.8, 1.0, 0.5, 1.0],
                                   [1.0, -0.8,-1.0,-0.5, -1.0],
                                   [ 0.0, 0.0, 0.0, 0.0, 0.0]])
-        execute_states= np.array([[ 1.0, 0.8, 1.0, 0.5, 1.0],
-                                  [-1.0,-0.8,-1.0,-0.5, -1.0],
-                                  [-1.0, 0.8, 1.0, 0.5, 1.0],
-                                  [1.0, -0.8,-1.0,-0.5, -1.0],
-                                  [ 0.0, 0.0, 0.0, 0.0, 0.0]])
         execute_states.tolist()
         self.status_message = "State: Execute - Following Set Path"
         self.current_state = "execute"
 
         for i, wp in enumerate(execute_states):
-            initial_wp = self.tp.set_initial_wp()
-            final_wp = self.tp.set_final_wp(wp)
-            #print(final_wp)
-            T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 0.3)
-            plan_pts, plan_velos = self.tp.generate_cubic_spline(initial_wp, final_wp,T)
-            self.tp.execute_plan(plan_pts, plan_velos)
-            self.rexarm.pause(1)
+            if i==0 and wp.tolist()==np.zeros(wp.shape).tolist():
+                pass
+            else:
+                initial_wp = self.tp.set_initial_wp()
+                final_wp = self.tp.set_final_wp(wp)
+                T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 0.3)
+                plan_pts, plan_velos = self.tp.generate_cubic_spline(initial_wp, final_wp,T)
+                self.tp.execute_plan(plan_pts, plan_velos)
+                self.rexarm.pause(1)
         #for i,_ in enumerate(execute_states) :
         #    self.rexarm.set_positions(execute_states[i])
         #    self.rexarm.pause(1)
@@ -369,13 +366,16 @@ class StateMachine():
                 exec_joints.append(temp)
         #print(exec_joints)
         for i, wp in enumerate(exec_joints):
-            initial_wp = self.tp.set_initial_wp()
-            final_wp = self.tp.set_final_wp(wp)
-            print(initial_wp)
-            T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 2)
-            plan_pts, plan_velos = self.tp.generate_cubic_spline(initial_wp, final_wp,T)
-            self.tp.execute_plan(plan_pts, plan_velos)
-            self.rexarm.pause(1)
+            if i==0 and wp.tolist()==np.zeros(wp.shape).tolist():
+                pass
+            else:
+                initial_wp = self.tp.set_initial_wp()
+                final_wp = self.tp.set_final_wp(wp)
+                print(initial_wp)
+                T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 0.3)
+                plan_pts, plan_velos = self.tp.generate_cubic_spline(initial_wp, final_wp,T)
+                self.tp.execute_plan(plan_pts, plan_velos)
+                self.rexarm.pause(1)
 
 
         #for i,_ in enumerate(exec_joints) :
