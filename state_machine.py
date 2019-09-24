@@ -370,12 +370,10 @@ class StateMachine():
         execute_states.tolist()
         self.status_message = "State: Execute - Following Set Path"
         self.current_state = "execute"
-        execute_states, execute_velos = self.get_waypoints_wayvelos_from_path(execute_states)
-        #print(execute_states)
-        #print(execute_velos)
+        #execute_states, execute_velos = self.get_waypoints_wayvelos_from_path(execute_states)
         for i,_ in enumerate(execute_states) :
             self.rexarm.set_positions(execute_states[i])
-            self.rexarm.set_speeds(execute_velos[i])
+            #self.rexarm.set_speeds(execute_velos[i])
             self.rexarm.pause(0.1)
         self.rexarm.get_feedback()
         self.next_state = "idle"
@@ -397,6 +395,14 @@ class StateMachine():
                 temp = np.array([float(o) for o in r])
                 exec_joints.append(temp)
         #print(exec_joints)
+        for i, wp in enumerate(exec_joints):
+            init_wp = self.tp.set_init_wp()
+            final_wp = self.tp.set_final_wp(wp)
+            T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 2)
+            plan_pts, plan_velos = self.tp.generate_cubic_spline(initial_wp, final_wp,T)
+            self.tp.execute_plan(plan_pts, plan_velos)
+
+
         for i,_ in enumerate(exec_joints) :
             self.rexarm.set_positions(exec_joints[i])
             self.rexarm.pause(1)
