@@ -23,7 +23,7 @@ class TrajectoryPlanner():
 
     def set_final_wp(self, waypoint):
         self.final_wp = waypoint
-        return set_final_wp
+        return self.final_wp
 
     def go(self, max_speed = 2.5):
         pass
@@ -35,7 +35,7 @@ class TrajectoryPlanner():
         wp_diff = []
         for i in range(self.num_joints):
             wp_diff.append(abs(final_wp[i]-initial_wp[i]))
-        max_wp_diff = max(wp.diff)
+        max_wp_diff = max(wp_diff)
         T = max_wp_diff/max_speed
         return T
 
@@ -67,6 +67,7 @@ class TrajectoryPlanner():
         return plan_pts, plan_velos
 
     def execute_plan(self, plan_pts, plan_velos, look_ahead=8):
-        for i in range(len(plan_pts)-look_ahead):
+        for i in range(len(plan_pts)):
             self.rexarm.set_positions(plan_pts[i])
             self.rexarm.set_speeds(plan_velos[i])
+            self.rexarm.pause(self.dt)

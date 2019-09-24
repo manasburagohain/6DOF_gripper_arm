@@ -321,45 +321,6 @@ class StateMachine():
         self.status_message = "Calibration - Completed Calibration"
         time.sleep(1)
  
-    def get_waypoints_wayvelos_from_path(self,path):
-        dof = len(path[0])
-        waypoints = [[]]*dof
-        wayvelos = [[]]*dof
-        for i in range(len(path)-1):
-            # configuration constraints
-            Q_this = np.array(path[i])
-            Q_next = np.array(path[i+1])
-            V_this = np.zeros((1,len(path[i])))[0]
-            V_next = V_this
-            # time constraints
-            v_expected = 1 # speed
-            ts = 0.0;
-            tf = round(max(abs(Q_next-Q_this)/v_expected),1)
-            print(tf)
-            N = (tf-ts)/0.1+1
-            t = np.linspace(ts, tf, int(N), endpoint=True)
-            #print(t)
-            # for each DOF
-            for j in range(dof):
-                Qs = [Q_this[j]]
-                Qf = [Q_next[j]]
-                Vs = [V_this[j]]
-                Vf = [V_next[j]]
-                M = np.array([[1, ts, ts**2, ts**3],
-                              [0, 1,  2*ts, 3*(ts**2)],
-                              [1, tf, tf**2, tf**3],
-                              [0, 1,  2*tf, 3*(tf**2)]])
-                QV = np.array([Qs, Vs, Qf, Vf])
-                QV = QV.T
-                A = np.linalg.inv(M).dot(QV[0])
-                Qt = A[0]+A[1]*t+A[2]*np.power(t,2)+A[3]*np.power(t,3);
-                waypoints[j]=waypoints[j]+Qt.tolist()
-                Vt = A[1]+2*A[2]*t+3*A[3]*np.power(t,2)
-                wayvelos[j]=wayvelos[j]+Vt.tolist()
-        waypoints = np.array(waypoints).T.tolist()
-        wayvelos = np.array(wayvelos).T.tolist()
-        return waypoints, wayvelos
-
     def execute(self):
         execute_states= np.array([[ 0.0, 0.0, 0.0, 0.0, 0.0],
                                   [ 1.0, 0.8, 1.0, 0.5, 1.0],
@@ -367,14 +328,26 @@ class StateMachine():
                                   [-1.0, 0.8, 1.0, 0.5, 1.0],
                                   [1.0, -0.8,-1.0,-0.5, -1.0],
                                   [ 0.0, 0.0, 0.0, 0.0, 0.0]])
+        execute_states= np.array([[ 1.0, 0.8, 1.0, 0.5, 1.0],
+                                  [-1.0,-0.8,-1.0,-0.5, -1.0],
+                                  [-1.0, 0.8, 1.0, 0.5, 1.0],
+                                  [1.0, -0.8,-1.0,-0.5, -1.0],
+                                  [ 0.0, 0.0, 0.0, 0.0, 0.0]])
         execute_states.tolist()
         self.status_message = "State: Execute - Following Set Path"
         self.current_state = "execute"
-        #execute_states, execute_velos = self.get_waypoints_wayvelos_from_path(execute_states)
-        for i,_ in enumerate(execute_states) :
-            self.rexarm.set_positions(execute_states[i])
-            #self.rexarm.set_speeds(execute_velos[i])
-            self.rexarm.pause(0.1)
+
+        for i, wp in enumerate(execute_states):
+            initial_wp = self.tp.set_initial_wp()
+            final_wp = self.tp.set_final_wp(wp)
+            #print(final_wp)
+            T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 0.3)
+            plan_pts, plan_velos = self.tp.generate_cubic_spline(initial_wp, final_wp,T)
+            self.tp.execute_plan(plan_pts, plan_velos)
+            self.rexarm.pause(1)
+        #for i,_ in enumerate(execute_states) :
+        #    self.rexarm.set_positions(execute_states[i])
+        #    self.rexarm.pause(1)
         self.rexarm.get_feedback()
         self.next_state = "idle"
 
@@ -396,16 +369,18 @@ class StateMachine():
                 exec_joints.append(temp)
         #print(exec_joints)
         for i, wp in enumerate(exec_joints):
-            init_wp = self.tp.set_init_wp()
+            initial_wp = self.tp.set_initial_wp()
             final_wp = self.tp.set_final_wp(wp)
+            print(initial_wp)
             T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 2)
             plan_pts, plan_velos = self.tp.generate_cubic_spline(initial_wp, final_wp,T)
             self.tp.execute_plan(plan_pts, plan_velos)
-
-
-        for i,_ in enumerate(exec_joints) :
-            self.rexarm.set_positions(exec_joints[i])
             self.rexarm.pause(1)
+
+
+        #for i,_ in enumerate(exec_joints) :
+        #    self.rexarm.set_positions(exec_joints[i])
+        #    self.rexarm.pause(1)
         self.rexarm.get_feedback()
         self.next_state = "idle"
 
