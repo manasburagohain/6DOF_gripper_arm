@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 import csv
 from math import * 
+import kinematics as kine
 """
 TODO: Add states and state functions to this class
         to implement all of the required logic for the armlab
@@ -60,6 +61,8 @@ class StateMachine():
                 self.operation()
             if(self.next_state == "opplay"):
                 self.opplay()    
+            if(self.next_state == "FK_check"):
+                self.FK_check()    
         
         if(self.current_state == "operation"):
             if(self.next_state == "idle"):
@@ -85,7 +88,9 @@ class StateMachine():
             if(self.next_state == "idle"):
                 self.idle()
                
-
+        if(self.current_state == "FK_check"):
+            if(self.next_state == "idle"):
+                self.idle()
     """Functions run for each state"""
 
 
@@ -397,3 +402,12 @@ class StateMachine():
             self.rexarm.pause(1)
         self.rexarm.get_feedback()
         self.next_state = "idle"
+
+
+    def FK_check(self):
+        self.status_message = "Checking Forward Kinematics"
+        self.current_state = "FK_check"
+        kine.FK_dh(self.rexarm.get_positions())
+        self.rexarm.disable_torque()
+        self.rexarm.get_feedback()
+        self.next_state="idle"

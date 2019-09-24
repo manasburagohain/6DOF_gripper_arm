@@ -122,6 +122,7 @@ class Gui(QMainWindow):
         self.ui.btn_task2.clicked.connect(self.record)
         self.ui.btn_task3.clicked.connect(self.opex)
         self.ui.btn_task4.clicked.connect(self.opplay)
+        self.ui.btn_task5.clicked.connect(self.FK_check)
         self.ui.btnUser1.setText("Calibrate")
         self.ui.btnUser1.clicked.connect(partial(self.sm.set_next_state, "calibrate"))
         self.ui.sldrBase.valueChanged.connect(self.sliderChange)
@@ -194,9 +195,9 @@ class Gui(QMainWindow):
         self.ui.rdoutX.setText(str("%+.2f" % (pos[0])))
         self.ui.rdoutY.setText(str("%+.2f" % (pos[1])))
         self.ui.rdoutZ.setText(str("%+.2f" % (pos[2])))
-        self.ui.rdoutT.setText(str("%+.2f" % (pos[3])))
-        self.ui.rdoutG.setText(str("%+.2f" % (pos[4])))
-        self.ui.rdoutP.setText(str("%+.2f" % (pos[5])))
+        # self.ui.rdoutT.setText(str("%+.2f" % (pos[3])))
+        # self.ui.rdoutG.setText(str("%+.2f" % (pos[4])))
+        # self.ui.rdoutP.setText(str("%+.2f" % (pos[5])))
 
     @pyqtSlot(str)
     def updateStatusMessage(self, msg):
@@ -223,6 +224,9 @@ class Gui(QMainWindow):
 
     def opplay(self):
         self.sm.set_next_state("opplay")
+
+    def FK_check(self):
+        self.sm.set_next_state("FK_check")
 
     def record(self):
         if self.sm.current_state == "operation" :

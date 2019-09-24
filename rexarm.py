@@ -167,4 +167,6 @@ class Rexarm():
 
     def get_wrist_pose(self):
         """TODO"""
-        return [0,0,0,0,0,0]
+        end_effector_angle=FK_dh(self.joint_angles_fb)   
+        end_effector_angle=(end_effector_angle.flatten()).tolist()
+        return end_effector_angle
