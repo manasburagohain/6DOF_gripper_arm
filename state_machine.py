@@ -339,7 +339,7 @@ class StateMachine():
                 initial_wp = self.tp.set_initial_wp()
                 final_wp = self.tp.set_final_wp(wp)
                 T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 0.3)
-                plan_pts, plan_velos = self.tp.generate_cubic_spline(initial_wp, final_wp,T)
+                plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
                 self.tp.execute_plan(plan_pts, plan_velos)
                 self.rexarm.pause(1)
         #for i,_ in enumerate(execute_states) :
@@ -372,7 +372,7 @@ class StateMachine():
                 initial_wp = self.tp.set_initial_wp()
                 final_wp = self.tp.set_final_wp(wp)
                 print(initial_wp)
-                T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 0.3)
+                T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 1)
                 plan_pts, plan_velos = self.tp.generate_cubic_spline(initial_wp, final_wp,T)
                 self.tp.execute_plan(plan_pts, plan_velos)
                 self.rexarm.pause(1)

@@ -66,6 +66,38 @@ class TrajectoryPlanner():
         plan_velos = np.array(spline_velos).T.tolist()
         return plan_pts, plan_velos
 
+    def generate_quintic_spline(self, initial_wp, final_wp, T):
+        ts = 0.0
+        tf = T
+        N = int((tf-ts)/self.dt)+1
+        t = np.linspace(ts, tf, int(N), endpoint=True)
+        spline_pts = [[]]*self.num_joints
+        spline_velos = [[]]*self.num_joints
+        for j in range(self.num_joints):
+            Qs = [self.initial_wp[j]]
+            Qf = [self.final_wp[j]]
+            Vs = [0]
+            Vf = [0]
+            As = [0]
+            Af = [0]
+            M = np.array([[1, ts, ts**2, ts**3, ts**4, ts**5],
+                          [0, 1,  2*ts, 3*(ts**2), 4*(ts**3), 5*(ts**4)],
+                          [0, 0, 2, 6*ts, 12*(ts**2), 20*(ts**3)],
+                          [1, tf, tf**2, tf**3, tf**4, tf**5],
+                          [0, 1,  2*tf, 3*(tf**2), 4*(tf**3), 5*(tf**4)],
+                          [0, 0, 2, 6*tf, 12*(tf**2), 20*(tf**3)]])
+            QV = np.array([Qs, Vs, As, Qf, Vf, Af])
+            QV = QV.T
+            A = np.linalg.inv(M).dot(QV[0])
+            Qt = A[0]+A[1]*t+A[2]*np.power(t,2)+A[3]*np.power(t,3)+A[4]*np.power(t,4)+A[5]*np.power(t,5)
+            spline_pts[j]=Qt.tolist()
+            Vt = A[1]+2*A[2]*t+3*A[3]*np.power(t,2)+4*A[4]*np.power(t,3)+5*A[5]*np.power(t,4)
+            spline_velos[j]=Vt.tolist()
+        plan_pts = np.array(spline_pts).T.tolist()
+        plan_velos = np.array(spline_velos).T.tolist()
+        return plan_pts, plan_velos
+
+
     def execute_plan(self, plan_pts, plan_velos, look_ahead=8):
         for i in range(len(plan_pts)):
             self.rexarm.set_positions(plan_pts[i])
