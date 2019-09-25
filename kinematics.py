@@ -1,6 +1,7 @@
 import numpy as np
 #expm is a matrix exponential function
 from scipy.linalg import expm
+from se3 import *
 
 """ 
 TODO: Here is where you will write all of your kinematics functions 
@@ -8,7 +9,7 @@ There are some functions to start with, you may need to implement a few more
 
 """
 
-def FK_dh(joint_angles):
+def FK_dh(joint_angles,link):
     """
     TODO: mplement this function
     a1=0
@@ -21,7 +22,7 @@ def FK_dh(joint_angles):
     note: phi is the euler angle about the y-axis in the base frame
 
     """
-    # print ("DOING Dh")
+    # print ("DOING DH")
 
     base_theta=joint_angles[0]
     shoulder_theta=joint_angles[1]
@@ -29,46 +30,68 @@ def FK_dh(joint_angles):
     w1_theta=joint_angles[3]
     w2_theta=joint_angles[4]
 
-    # Defining a parameters    
-    a1=0
-    a2=104
-    a3=0
-    a4=0
-    a5=108
+    # Defining DH table parameters  
 
-    # Defining d parameters
-    d1=76.2
-    d2=0
-    d3=0
-    d4=112
-    d5=0
+    # Distances are in mm
+    a2=100.5 
+    d1=117.1
+    d3=71
+    d4=41.5
 
-    A1= np.array([[np.cos(base_theta), -np.sin(base_theta)*np.cos(np.pi/2), np.sin(base_theta)*np.sin(np.pi/2), a1*np.cos(base_theta)], 
-        [np.sin(base_theta), np.cos(base_theta)*np.cos(np.pi/2), -np.cos(base_theta)*np.sin(np.pi/2), a1*np.sin(base_theta)],
-        [0,np.sin(np.pi/2),np.cos(np.pi/2),d1],
-        [0,0,0,1]])
+    a=np.array([0,a2,0,0,0])
+    alpha=np.array([-np.pi/2,0,np.pi/2,-np.pi/2,np.pi/2])
+    d=np.array([d1,0,0,d3+d4,0])
+    theta=np.array([base_theta,shoulder_theta-np.pi/2,wrist_theta+np.pi/2,w1_theta,w2_theta])
 
-    A2= np.array([[np.cos(shoulder_theta), -np.sin(shoulder_theta)*np.cos(0), np.sin(shoulder_theta)*np.sin(0), a2*np.cos(shoulder_theta)], 
-        [np.sin(shoulder_theta), np.cos(shoulder_theta)*np.cos(0), -np.cos(shoulder_theta)*np.sin(0), a2*np.sin(shoulder_theta)],
-        [0,np.sin(0),np.cos(0),d2],
-        [0,0,0,1]])
+    # Defining functions to compute matrices
+    # Rot matrices are obtained from se3.py
 
-    A3= np.array([[np.cos(wrist_theta-np.pi/2), -np.sin(wrist_theta-np.pi/2)*np.cos(np.pi/2), np.sin(wrist_theta-np.pi/2)*np.sin(np.pi/2), a3*np.cos(wrist_theta-np.pi/2)], 
-        [np.sin(wrist_theta-np.pi/2), np.cos(wrist_theta-np.pi/2)*np.cos(np.pi/2), -np.cos(wrist_theta-np.pi/2)*np.sin(np.pi/2), a3*np.sin(wrist_theta-np.pi/2)],
-        [0,np.sin(np.pi/2),np.cos(np.pi/2),d3],
-        [0,0,0,1]])
+    def Trans_z_d (d)
+        return np.array([[1,0,0,0],[0,1,0,0],[0,0,1,d],[0,0,0,1]])
 
-    A4= np.array([[np.cos(w1_theta), -np.sin(w1_theta)*np.cos(-1*np.pi/2), np.sin(w1_theta)*np.sin(-1*np.pi/2), a4*np.cos(w1_theta)], 
-        [np.sin(w1_theta), np.cos(w1_theta)*np.cos(-1*np.pi/2), -np.cos(w1_theta)*np.sin(-1*np.pi/2), a4*np.sin(w1_theta)],
-        [0,np.sin(-1*np.pi/2),np.cos(-1*np.pi/2),d4],
-        [0,0,0,1]])
+    def Trans_x_a (a)
+        return np.array([[1,0,0,a],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
 
-    A5= np.array([[np.cos(wrist_theta+np.pi/2), -np.sin(wrist_theta+np.pi/2)*np.cos(-1*np.pi/2), np.sin(wrist_theta+np.pi/2)*np.sin(-1*np.pi/2), a5*np.cos(w2_theta+np.pi/2)], 
-        [np.sin(w2_theta+np.pi/2), np.cos(w2_theta+np.pi/2)*np.cos(-1*np.pi/2), -np.cos(w2_theta+np.pi/2)*np.sin(-1*np.pi/2), a5*np.sin(w2_theta+np.pi/2)],
-        [0,np.sin(-1*np.pi/2),np.cos(-1*np.pi/2),d5],
-        [0,0,0,1]])
+    # Computing the H matrix 
+    H=np.identity(4)
+    
+    for i in range(link)
+        H=H.dot(aaToRot([0,0,theta[i]]).dot(Trans_z_d(d[i])).dot(Trans_x_a(a[i])).dot(aaToRot([alpha[i],0,0])))
 
-    H=np.matmul(np.matmul(np.matmul(A1,A2),np.matmul(A3,A4)),A5)
+
+    # # Defining d parameters
+    # d1=76.2
+    # d2=0
+    # d3=0
+    # d4=112
+    # d5=0
+
+    # A1= np.array([[np.cos(base_theta), -np.sin(base_theta)*np.cos(np.pi/2), np.sin(base_theta)*np.sin(np.pi/2), a1*np.cos(base_theta)], 
+    #     [np.sin(base_theta), np.cos(base_theta)*np.cos(np.pi/2), -np.cos(base_theta)*np.sin(np.pi/2), a1*np.sin(base_theta)],
+    #     [0,np.sin(np.pi/2),np.cos(np.pi/2),d1],
+    #     [0,0,0,1]])
+
+    # A2= np.array([[np.cos(shoulder_theta), -np.sin(shoulder_theta)*np.cos(0), np.sin(shoulder_theta)*np.sin(0), a2*np.cos(shoulder_theta)], 
+    #     [np.sin(shoulder_theta), np.cos(shoulder_theta)*np.cos(0), -np.cos(shoulder_theta)*np.sin(0), a2*np.sin(shoulder_theta)],
+    #     [0,np.sin(0),np.cos(0),d2],
+    #     [0,0,0,1]])
+
+    # A3= np.array([[np.cos(wrist_theta-np.pi/2), -np.sin(wrist_theta-np.pi/2)*np.cos(np.pi/2), np.sin(wrist_theta-np.pi/2)*np.sin(np.pi/2), a3*np.cos(wrist_theta-np.pi/2)], 
+    #     [np.sin(wrist_theta-np.pi/2), np.cos(wrist_theta-np.pi/2)*np.cos(np.pi/2), -np.cos(wrist_theta-np.pi/2)*np.sin(np.pi/2), a3*np.sin(wrist_theta-np.pi/2)],
+    #     [0,np.sin(np.pi/2),np.cos(np.pi/2),d3],
+    #     [0,0,0,1]])
+
+    # A4= np.array([[np.cos(w1_theta), -np.sin(w1_theta)*np.cos(-1*np.pi/2), np.sin(w1_theta)*np.sin(-1*np.pi/2), a4*np.cos(w1_theta)], 
+    #     [np.sin(w1_theta), np.cos(w1_theta)*np.cos(-1*np.pi/2), -np.cos(w1_theta)*np.sin(-1*np.pi/2), a4*np.sin(w1_theta)],
+    #     [0,np.sin(-1*np.pi/2),np.cos(-1*np.pi/2),d4],
+    #     [0,0,0,1]])
+
+    # A5= np.array([[np.cos(wrist_theta+np.pi/2), -np.sin(wrist_theta+np.pi/2)*np.cos(-1*np.pi/2), np.sin(wrist_theta+np.pi/2)*np.sin(-1*np.pi/2), a5*np.cos(w2_theta+np.pi/2)], 
+    #     [np.sin(w2_theta+np.pi/2), np.cos(w2_theta+np.pi/2)*np.cos(-1*np.pi/2), -np.cos(w2_theta+np.pi/2)*np.sin(-1*np.pi/2), a5*np.sin(w2_theta+np.pi/2)],
+    #     [0,np.sin(-1*np.pi/2),np.cos(-1*np.pi/2),d5],
+    #     [0,0,0,1]])
+
+    # H=np.matmul(np.matmul(np.matmul(A1,A2),np.matmul(A3,A4)),A5)
 
     # print ("H matrix is ", H)
     return H[0:3,2:3]
