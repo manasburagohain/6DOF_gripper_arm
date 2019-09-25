@@ -61,7 +61,7 @@ def FK_dh(joint_angles,link):
     # Computing the H matrix 
     H=np.identity(4)
     
-    for i in range(link-1):
+    for i in range(4):
         A=np.matmul(Rot_z_theta(theta[i]),np.matmul(Trans_z_d(d[i]),np.matmul(Trans_x_a(a[i]),Rot_x_alpha(alpha[i]))))
         H=np.matmul(H,A)
 
@@ -74,7 +74,7 @@ def FK_dh(joint_angles,link):
     H=H[0:3,-1]
     np.append(H, phi) 
 
-    return 
+    return H
     pass
 
 def FK_pox(joint_angles):
@@ -164,7 +164,7 @@ def IK(pose):
                 return None
 
 
-        return (base_theta, shoulder_theta, elbow_th eta,w2_theta)
+        return (base_theta, shoulder_theta, elbow_theta,w2_theta)
         pass
 
     else:

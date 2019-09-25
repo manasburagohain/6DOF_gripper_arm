@@ -314,7 +314,7 @@ class Gui(QMainWindow):
                     affine=affine[0:2,0:2]
 
                     world_value=np.matmul(affine,pixel_value)
-                    self.kinect.currentDepthFrame = cv2.warpAffine(self.kinect.currentDepthFrame,affine_rgb2depth)
+                    # self.kinect.currentDepthFrame = cv2.warpAffine(self.kinect.currentDepthFrame,affine_rgb2depth)
                     rgb_pt = np.array([[pixel_value[0],pixel_value[1],1]])
                     depth_value=np.matmul(affine_rgb2depth,rgb_pt.T)
                     #print(depth_value)

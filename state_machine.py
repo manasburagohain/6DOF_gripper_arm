@@ -248,7 +248,7 @@ class StateMachine():
 
         affine_rgb2depth = cv2.getAffineTransform(depth_coords, rgb_coords) #changed to affine from perspective
         #dep2rgt2 = cv2.estimateRigidTransform(depth_coords, rgb_coords, 1)
-        print(affine_rgb2depth)
+        print("Affine rgb2depth is",affine_rgb2depth)
         #print(dep2rgt2)
         
 
