@@ -199,6 +199,7 @@ class StateMachine():
         projmat = camMatrix.dot(extmat)
         projmat = np.vstack((projmat,np.array([0,0,0,1])))
 
+        
 
         #extmat=np.append(extmat,np.array([[0,0,0,1]]),axis=0)
         #print(exttmat)

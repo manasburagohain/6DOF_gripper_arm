@@ -3,9 +3,6 @@ import cv2
 import numpy as np
 import freenect
 
-
-
-
 font = cv2.FONT_HERSHEY_SIMPLEX
 
 # def mouse_callback(event,x,y,flags,param):
@@ -53,7 +50,7 @@ for i in range(0,len(color_lower_array)):
 	closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT,(1,1)))
 
 # 	# Detecting the contours
-	contours, hierarchy,_ = cv2.findContours(closing, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+	im2, contours, hierarchy = cv2.findContours(closing, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
 	print (contours)
 # 	# Find the largest contour

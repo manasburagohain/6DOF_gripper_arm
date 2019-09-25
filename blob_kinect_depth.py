@@ -108,15 +108,16 @@ for i in range(len(stack_thresh_lower_array)):
 # 	# # Marking the COMon the image
 # 	# img[cy-2:cy+2,cx-2:cx+2]=[0,0,255]
 
-	cv2.namedWindow("window",cv2.WINDOW_AUTOSIZE)
-	cv2.namedWindow("mask",cv2.WINDOW_AUTOSIZE)
-	cv2.imshow('window', depth_frame)
-	cv2.imshow('mask', closing)
+cv2.namedWindow("window",cv2.WINDOW_AUTOSIZE)
+cv2.namedWindow("mask",cv2.WINDOW_AUTOSIZE)
+cv2.imshow('window', depth_frame)
+cv2.imshow('mask', closing)
 
 	# cv2.setMouseCallback("window",mouse_callback)
 
-	while True:
-		ch = 0xFF & cv2.waitKey(10)
-		if ch == 0x1B:
-			break
-	cv2.destroyAllWindows()
+# time.sleep(1) # Use this to continuously show all windows
+while True:
+	ch = 0xFF & cv2.waitKey(10)
+	if ch == 0x1B:
+		break
+cv2.destroyAllWindows()

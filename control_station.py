@@ -314,7 +314,9 @@ class Gui(QMainWindow):
                     affine=affine[0:2,0:2]
 
                     world_value=np.matmul(affine,pixel_value)
-                    depth_value=np.matmul(affine_rgb2depth,pixel_value)
+                    self.kinect.currentDepthFrame = cv2.warpAffine(self.kinect.currentDepthFrame,affine_rgb2depth)
+                    rgb_pt = np.array([[pixel_value[0],pixel_value[1],1]])
+                    depth_value=np.matmul(affine_rgb2depth,rgb_pt.T)
                     #print(depth_value)
                     #z = self.kinect.currentDepthFrame[int(depth_value.item(1))][int(depth_value.item(0))]
                     Z = 12.36 * np.tan(float(z)/2842.5 + 1.1863)
