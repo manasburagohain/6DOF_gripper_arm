@@ -136,6 +136,8 @@ class Rexarm():
             self.temp_fb[i] = joint.get_temp()
         return self.temp_fb
 
+       
+        
     def get_moving_status(self):
         for i,joint in enumerate(self.joints):
             self.move_fb[i] = joint.is_moving()
@@ -167,6 +169,8 @@ class Rexarm():
 
     def get_wrist_pose(self):
         """TODO"""
-        end_effector_angle=FK_dh(self.joint_angles_fb)   
+        end_effector_angle=FK_dh(self.joint_angles_fb,self.num_joints)   
         end_effector_angle=(end_effector_angle.flatten()).tolist()
+
+        # print ("end_effector_angle is ",end_effector_angle)
         return end_effector_angle

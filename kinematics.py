@@ -26,75 +26,45 @@ def FK_dh(joint_angles,link):
 
     base_theta=joint_angles[0]
     shoulder_theta=joint_angles[1]
-    wrist_theta=joint_angles[2]
+    elbow_theta=joint_angles[2]
     w1_theta=joint_angles[3]
     w2_theta=joint_angles[4]
 
     # Defining DH table parameters  
 
     # Distances are in mm
-    a2=100.5 
-    d1=117.1
-    d3=71
-    d4=41.5
+    d1=122.14 
+    a2=105
+    a3=126.77
+    a4=122.12
 
-    a=np.array([0,a2,0,0,0])
-    alpha=np.array([-np.pi/2,0,np.pi/2,-np.pi/2,np.pi/2])
-    d=np.array([d1,0,0,d3+d4,0])
-    theta=np.array([base_theta,shoulder_theta-np.pi/2,wrist_theta+np.pi/2,w1_theta,w2_theta])
+    a=np.array([0,a2,a3,a4])
+    alpha=np.array([np.pi/2,0,0,0])
+    d=np.array([d1,0,0,0])
+    theta=np.array([base_theta,shoulder_theta+np.pi/2,elbow_theta,w2_theta])
 
     # Defining functions to compute matrices
-    # Rot matrices are obtained from se3.py
 
-    def Trans_z_d (d)
+    def Trans_z_d (d):
         return np.array([[1,0,0,0],[0,1,0,0],[0,0,1,d],[0,0,0,1]])
 
-    def Trans_x_a (a)
+    def Trans_x_a (a):
         return np.array([[1,0,0,a],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
+
+    def Rot_z_theta (theta):
+        return np.array([[np.cos(theta),-np.sin(theta),0,0],[np.sin(theta),np.cos(theta),0,0],[0,0,1,0],[0,0,0,1]])
+
+    def Rot_x_alpha (alpha):
+        return np.array([[1,0,0,0],[0,np.cos(alpha),-np.sin(alpha),0],[0,np.sin(alpha),np.cos(alpha),0],[0,0,0,1]])
 
     # Computing the H matrix 
     H=np.identity(4)
     
-    for i in range(link)
-        H=H.dot(aaToRot([0,0,theta[i]]).dot(Trans_z_d(d[i])).dot(Trans_x_a(a[i])).dot(aaToRot([alpha[i],0,0])))
+    for i in range(link-1):
+        A=np.matmul(Rot_z_theta(theta[i]),np.matmul(Trans_z_d(d[i]),np.matmul(Trans_x_a(a[i]),Rot_x_alpha(alpha[i]))))
+        H=np.matmul(H,A)
 
-
-    # # Defining d parameters
-    # d1=76.2
-    # d2=0
-    # d3=0
-    # d4=112
-    # d5=0
-
-    # A1= np.array([[np.cos(base_theta), -np.sin(base_theta)*np.cos(np.pi/2), np.sin(base_theta)*np.sin(np.pi/2), a1*np.cos(base_theta)], 
-    #     [np.sin(base_theta), np.cos(base_theta)*np.cos(np.pi/2), -np.cos(base_theta)*np.sin(np.pi/2), a1*np.sin(base_theta)],
-    #     [0,np.sin(np.pi/2),np.cos(np.pi/2),d1],
-    #     [0,0,0,1]])
-
-    # A2= np.array([[np.cos(shoulder_theta), -np.sin(shoulder_theta)*np.cos(0), np.sin(shoulder_theta)*np.sin(0), a2*np.cos(shoulder_theta)], 
-    #     [np.sin(shoulder_theta), np.cos(shoulder_theta)*np.cos(0), -np.cos(shoulder_theta)*np.sin(0), a2*np.sin(shoulder_theta)],
-    #     [0,np.sin(0),np.cos(0),d2],
-    #     [0,0,0,1]])
-
-    # A3= np.array([[np.cos(wrist_theta-np.pi/2), -np.sin(wrist_theta-np.pi/2)*np.cos(np.pi/2), np.sin(wrist_theta-np.pi/2)*np.sin(np.pi/2), a3*np.cos(wrist_theta-np.pi/2)], 
-    #     [np.sin(wrist_theta-np.pi/2), np.cos(wrist_theta-np.pi/2)*np.cos(np.pi/2), -np.cos(wrist_theta-np.pi/2)*np.sin(np.pi/2), a3*np.sin(wrist_theta-np.pi/2)],
-    #     [0,np.sin(np.pi/2),np.cos(np.pi/2),d3],
-    #     [0,0,0,1]])
-
-    # A4= np.array([[np.cos(w1_theta), -np.sin(w1_theta)*np.cos(-1*np.pi/2), np.sin(w1_theta)*np.sin(-1*np.pi/2), a4*np.cos(w1_theta)], 
-    #     [np.sin(w1_theta), np.cos(w1_theta)*np.cos(-1*np.pi/2), -np.cos(w1_theta)*np.sin(-1*np.pi/2), a4*np.sin(w1_theta)],
-    #     [0,np.sin(-1*np.pi/2),np.cos(-1*np.pi/2),d4],
-    #     [0,0,0,1]])
-
-    # A5= np.array([[np.cos(wrist_theta+np.pi/2), -np.sin(wrist_theta+np.pi/2)*np.cos(-1*np.pi/2), np.sin(wrist_theta+np.pi/2)*np.sin(-1*np.pi/2), a5*np.cos(w2_theta+np.pi/2)], 
-    #     [np.sin(w2_theta+np.pi/2), np.cos(w2_theta+np.pi/2)*np.cos(-1*np.pi/2), -np.cos(w2_theta+np.pi/2)*np.sin(-1*np.pi/2), a5*np.sin(w2_theta+np.pi/2)],
-    #     [0,np.sin(-1*np.pi/2),np.cos(-1*np.pi/2),d5],
-    #     [0,0,0,1]])
-
-    # H=np.matmul(np.matmul(np.matmul(A1,A2),np.matmul(A3,A4)),A5)
-
-    # print ("H matrix is ", H)
-    return H[0:3,2:3]
+    return H[0:3,-1]
     pass
 
 def FK_pox(joint_angles):

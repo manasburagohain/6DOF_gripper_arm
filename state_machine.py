@@ -144,14 +144,23 @@ class StateMachine():
         print(self.kinect.depth_click_points)
 
         """TODO Perform camera calibration here"""
-
+        #global affine_rgb2depth
+        affine_rgb2depth = self.kinect.getAffineTransform(self.kinect.rgb_click_points, self.kinect.depth_click_points)
+        
+        '''
         camMatrix = np.array([[562.04399308,0.00,327.78253347],[0.00,559.59009967,249.41949401],[0.00,0.00,1.00]])
         distCoeffs = np.array([2.86261843e-01,-1.06215288e+00,-6.38736068e-04,-6.91259011e-04,1.42539697e+00])
 
         # Hardcoding the edge coordinates of the board
 
         world_coords = np.array([[-31.22,-29.72,0.0],[-31.22,30.61,3.85],[29.46,30.61,7.7],[29.46,-29.72,11.55]]) # inch
+        world_coords = np.array([[-31.22,-29.72],[-31.22,30.61],[29.46,30.61],[29.46,-29.72],[0.0,0.0]]) # inch
+
         pixel_coords = self.kinect.rgb_click_points
+
+        global affine_matrix_rgb
+        affine_matrix_rgb=self.kinect.getAffineTransform(world_coords, pixel_coords)
+
         new_pixel_coords = np.zeros(shape=(4,2),dtype=np.float32)
         # Converting the pixel coordinates assuming center of board as camera (0,0)
         for i in range(4):
@@ -238,7 +247,7 @@ class StateMachine():
         #dep2rgt2 = cv2.estimateRigidTransform(depth_coords, rgb_coords, 1)
         #print(rgb2dep)
         #print(dep2rgt2)
-
+        '''
 
        
 
@@ -338,7 +347,7 @@ class StateMachine():
             else:
                 initial_wp = self.tp.set_initial_wp()
                 final_wp = self.tp.set_final_wp(wp)
-                T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 0.3)
+                T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 2)
                 plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
                 self.tp.execute_plan(plan_pts, plan_velos)
                 self.rexarm.pause(1)
@@ -372,7 +381,7 @@ class StateMachine():
                 initial_wp = self.tp.set_initial_wp()
                 final_wp = self.tp.set_final_wp(wp)
                 print(initial_wp)
-                T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 1)
+                T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 2)
                 plan_pts, plan_velos = self.tp.generate_cubic_spline(initial_wp, final_wp,T)
                 self.tp.execute_plan(plan_pts, plan_velos)
                 self.rexarm.pause(1)
