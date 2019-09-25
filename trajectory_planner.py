@@ -98,8 +98,8 @@ class TrajectoryPlanner():
         return plan_pts, plan_velos
 
 
-    def execute_plan(self, plan_pts, plan_velos, look_ahead=8):
-        for i in range(len(plan_pts)):
-            self.rexarm.set_positions(plan_pts[i])
+    def execute_plan(self, plan_pts, plan_velos, look_ahead=12):
+        for i in range(len(plan_pts)-look_ahead):
+            self.rexarm.set_positions(plan_pts[i+look_ahead])
             self.rexarm.set_speeds(plan_velos[i])
             self.rexarm.pause(self.dt)

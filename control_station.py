@@ -99,16 +99,18 @@ class Gui(QMainWindow):
         Dynamixel bus
         TODO: add other motors here as needed with their correct address"""
         self.dxlbus = DXL_BUS(DEVICENAME, BAUDRATE)
+        print(self.dxlbus)
         port_num = self.dxlbus.port()
         base = DXL_MX(port_num, 1)
         shld = DXL_MX(port_num, 2)
         elbw = DXL_MX(port_num, 3)
         wrst = DXL_AX(port_num, 4)
         wrst2 = DXL_AX(port_num, 5)
+        grip = DXL_XL(port_num, 6)
 
         """Objects Using Other Classes"""
         self.kinect = Kinect()
-        self.rexarm = Rexarm((base,shld,elbw,wrst,wrst2),0)
+        self.rexarm = Rexarm((base,shld,elbw,wrst,wrst2), grip)
         self.tp = TrajectoryPlanner(self.rexarm)
         self.sm = StateMachine(self.rexarm, self.tp, self.kinect)
     
@@ -131,6 +133,7 @@ class Gui(QMainWindow):
         self.ui.sldrWrist.valueChanged.connect(self.sliderChange)
 
         self.ui.sldrWrist2.valueChanged.connect(self.sliderChange)
+        self.ui.sldrGrip1.valueChanged.connect(self.sliderChange)
 
         self.ui.sldrMaxTorque.valueChanged.connect(self.sliderChange)
         self.ui.sldrSpeed.valueChanged.connect(self.sliderChange)
@@ -250,6 +253,7 @@ class Gui(QMainWindow):
         self.ui.rdoutWrist.setText(str(self.ui.sldrWrist.value()))
 
         self.ui.rdoutWrist2.setText(str(self.ui.sldrWrist2.value()))
+        self.ui.rdoutGrip1.setText(str(self.ui.sldrGrip1.value()))
 
         self.ui.rdoutTorq.setText(str(self.ui.sldrMaxTorque.value()) + "%")
         self.ui.rdoutSpeed.setText(str(self.ui.sldrSpeed.value()) + "%")
@@ -261,6 +265,7 @@ class Gui(QMainWindow):
                            self.ui.sldrWrist.value()*D2R,
                            self.ui.sldrWrist2.value()*D2R])
         self.rexarm.set_positions(joint_positions, update_now = False)
+        self.rexarm.gripper.set_position(np.array([self.ui.sldrGrip1.value()*D2R]))
 
     def directControlChk(self, state):
         if state == Qt.Checked:
@@ -309,10 +314,9 @@ class Gui(QMainWindow):
                     affine=affine[0:2,0:2]
 
                     world_value=np.matmul(affine,pixel_value)
-                    rgb_pt = np.array([pixel_value.item(0),pixel_value.item(1),1])
-                    depth_value=np.matmul(affine_rgb2depth,rgb_pt)
+                    depth_value=np.matmul(affine_rgb2depth,pixel_value)
                     #print(depth_value)
-                    z = self.kinect.currentDepthFrame[int(depth_value.item(1))][int(depth_value.item(0))]
+                    #z = self.kinect.currentDepthFrame[int(depth_value.item(1))][int(depth_value.item(0))]
                     Z = 12.36 * np.tan(float(z)/2842.5 + 1.1863)
                     # -0.197*float(z) + 142.772 
                     self.ui.rdoutMouseWorld.setText("(%.0f,%.0f,%.1f)" % (world_value.item(0),world_value.item(1),Z))

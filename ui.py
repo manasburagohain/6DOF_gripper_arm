@@ -366,8 +366,8 @@ class Ui_MainWindow(object):
         self.verticalLayout_6.addWidget(self.rdoutWrist3)
         self.sldrGrip1 = QtGui.QSlider(self.SliderFrame)
         self.sldrGrip1.setGeometry(QtCore.QRect(77, 166, 133, 29)) #77
-        self.sldrGrip1.setMinimum(-179)
-        self.sldrGrip1.setMaximum(180)
+        self.sldrGrip1.setMinimum(-90)
+        self.sldrGrip1.setMaximum(75)
         self.sldrGrip1.setOrientation(QtCore.Qt.Horizontal)
         self.sldrGrip1.setObjectName(_fromUtf8("sldrGrip1"))
         self.G1LableS = QtGui.QLabel(self.SliderFrame)
