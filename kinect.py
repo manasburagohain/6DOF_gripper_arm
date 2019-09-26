@@ -135,6 +135,31 @@ class Kinect():
         You will need to locate
         blocks in 3D space
         """
+
+        img = freenect.sync_get_video()[0]
+
+        # Converting the Camera frame from RGB to HSV
+        bgr_frame = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        hsv = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2HSV)
+
+        # Definining the HSV Values
+        color_order=['yellow','orange','pink','black','blue','green','purple','red']
+        color_lower_array=np.array([[0,0,0],[0,100,170],[165,90,210],[0,20,20],[20,110,20],[40,5,88],[140,70,80],[169,120,120]])
+        color_higher_array=np.array([[200,255,255],[40,255,210],[173,215,255],[180,110,80],[110,130,80],[80,150,200],[160,150,210],[180,255,210]])
+
+        affinerg2depth=np.arrray([9.19774514e-01, -2.90898560e-03, -2.847440987e+02],[2.40977681e-03, -9.19186413e-01, 2.47576195e+02])
+        # Extracting the H,S and V values at the center of the block from depth camera
+        color=[]
+
+        for i in range(block_coordinates.size):
+            h = hsv[block_coordinates[i+1]][i][0]
+            s = hsv[block_coordinates[i+1]][i][1]
+            v = hsv[block_coordinates[i+1]][i][2]
+            rgb_hsv_values=np.array([])
+            rgb_hsv_values=np.array([[h,s,v]])
+
+            if (rgb_hsv_values[0]>=color_lower_array[i][0] and rgb_hsv_values[0]<=color_higher_array[i][0]) and (rgb_hsv_values[1]>=color_lower_array[i][1] and rgb_hsv_values[1]<=color_higher_array[i][1]) and (rgb_hsv_values[2]>=color_lower_array[i][2] and rgb_hsv_values[2]<=color_higher_array[i][2]):
+                color.append(color_order[i]) 
         pass
 
     def detectBlocksInDepthImage(self):

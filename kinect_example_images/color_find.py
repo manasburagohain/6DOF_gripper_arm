@@ -21,10 +21,13 @@ font = cv.FONT_HERSHEY_SIMPLEX
 # 		print "bgr: (%d, %d, %d) \nhsv: (%d, %d, %d)" % (b,g,r,h,s,v)
 
 
-if len(sys.argv) == 2:
+if len(sys.argv) == 3:
 	print "Opening " + str(sys.argv[1])
 	img = cv.imread(sys.argv[1])
 	hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+
+	img_depth=cv.imread(sys.argv[2])
+
 
 	# lower_blue = np.array([110,50,50])
 	# upper_blue = np.array([130,255,255])
@@ -75,6 +78,31 @@ if len(sys.argv) == 2:
 		print(rot)
 		# img = cv.warpAffine(img, rot, (rows,cols))
 
+		# rgb_loc=np.array([[center[0]],[center[1]],[1]])
+
+		rgb_loc=np.array([[0],[0]])
+
+
+		affine_rgb2depth=np.array([[9.19774514e-01, -2.91898560e-03],[2.40977681e-03, -9.19186413e-01]])
+		# affine_rgb2depth=np.array([[9.19774514e-01, -2.90898560e-03, -2.847440987e+02],[2.40977681e-03, -9.19186413e-01, 2.47576195e+02]])
+
+		# affine_rgb2depth=np.array([[ 1.08723201e+00, -3.44080614e-03,  3.10434760e+02],
+  #      [ 2.85033204e-03, -1.08792763e+00,  2.70156597e+02],
+  #      [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+
+		depth_loc=np.matmul(affine_rgb2depth,rgb_loc)
+
+		print("depth loc is",depth_loc)
+
+		# depth_loc=np.array([[center[0]],[center[1]],[1]])
+
+		# depth_loc[0]=depth_loc[0]+1.247440987e+01
+		# depth_loc[1]=depth_loc[1]-2.47576195e+01
+
+
+
+		img_depth[int(depth_loc[1])-2:int(depth_loc[1])+2,int(depth_loc[0])-2:int(depth_loc[0])+2]=[0]
+
 
 
 		# Center of Mass of the detected contour
@@ -93,6 +121,8 @@ if len(sys.argv) == 2:
 
 	cv.namedWindow("window",1)
 	cv.imshow('window', img)
+	cv.namedWindow("window_depth",2)
+	cv.imshow('window_depth', img_depth)
 
 
 	# cv2.setMouseCallback("window",mouse_callback)
