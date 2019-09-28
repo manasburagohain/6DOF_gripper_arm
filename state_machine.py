@@ -156,7 +156,7 @@ class StateMachine():
 
         # Hardcoding the edge coordinates of the board
 
-        world_coords = np.array([[-312.2,-297.2,0.0],[-312.2,306.1,38.5],[294.6,306.1,77],[294.6,-297.2,115.5]]) #mm
+        world_coords = np.array([[-31.22,-29.72,0.0],[-31.22,30.61,3.85],[29.46,30.61,7.7],[29.46,-29.72,11.55]]) #mm
         #world_coords = np.array([[-31.22,-29.72],[-31.22,30.61],[29.46,30.61],[29.46,-29.72],[0.0,0.0]]) #mm
 
         pixel_coords = self.kinect.rgb_click_points.copy()
@@ -191,13 +191,15 @@ class StateMachine():
         ##################
         #Trying Solve PnP#
         ##################
+        blah = self.kinect.rgb_click_points.copy()
         for i in range(4):
             for j in range (2):
-                new_pixel_coords[i][j]=(-1)**j*(pixel_coords[i][j]-pixel_coords[4][j])
-
+                new_pixel_coords[i][j]=blah[i][j]
+        print(new_pixel_coords)
         world_coords.astype(np.float64)
         ret, rotvec, transvec = cv2.solvePnP(world_coords,new_pixel_coords,camMatrix,distCoeffs)
         rotmat,jac = cv2.Rodrigues(rotvec)
+        print(rotmat,transvec)
         extmat = np.column_stack((rotmat,transvec))
 
         global solverot, solvetrans
@@ -210,11 +212,9 @@ class StateMachine():
         ########################
         rgb_coords = self.kinect.rgb_click_points
         rgb_coords = rgb_coords[0:3,:]
-        print(rgb_coords)
         depth_coords = self.kinect.depth_click_points
         depth_coords = depth_coords[0:3,:]
-        print(depth_coords)
-
+        
 
         # print(rgb_coords,depth_coords)
         # rgb_coords = rgb_coords.astype('float32')
