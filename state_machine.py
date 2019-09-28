@@ -11,9 +11,12 @@ TODO: Add states and state functions to this class
 
 affine_matrix_rgb=0
 affine_rgb2depth=0
+affine_depth2rgb=0
+solverot = 0
+solvetrans = 0
 calibration_done=False
 pixel_center=0
-rgb2dep = 0
+camMatrix = 0
 
 
 class StateMachine():
@@ -140,23 +143,23 @@ class StateMachine():
                     i = i + 1
                     self.kinect.new_click = False
    
-        print(self.kinect.rgb_click_points)
-        print(self.kinect.depth_click_points)
+        # print(self.kinect.rgb_click_points)
+        # print(self.kinect.depth_click_points)
 
         """TODO Perform camera calibration here"""
         #global affine_rgb2depth
         #affine_rgb2depth = self.kinect.getAffineTransform(self.kinect.rgb_click_points, self.kinect.depth_click_points)
         
-        
+        global camMatrix
         camMatrix = np.array([[562.04399308,0.00,327.78253347],[0.00,559.59009967,249.41949401],[0.00,0.00,1.00]])
         distCoeffs = np.array([2.86261843e-01,-1.06215288e+00,-6.38736068e-04,-6.91259011e-04,1.42539697e+00])
 
         # Hardcoding the edge coordinates of the board
 
-        world_coords = np.array([[-31.22,-29.72,0.0],[-31.22,30.61,3.85],[29.46,30.61,7.7],[29.46,-29.72,11.55]]) # inch
-        #world_coords = np.array([[-31.22,-29.72],[-31.22,30.61],[29.46,30.61],[29.46,-29.72],[0.0,0.0]]) # inch
+        world_coords = np.array([[-312.2,-297.2,0.0],[-312.2,306.1,38.5],[294.6,306.1,77],[294.6,-297.2,115.5]]) #mm
+        #world_coords = np.array([[-31.22,-29.72],[-31.22,30.61],[29.46,30.61],[29.46,-29.72],[0.0,0.0]]) #mm
 
-        pixel_coords = self.kinect.rgb_click_points
+        pixel_coords = self.kinect.rgb_click_points.copy()
 
         #global affine_matrix_rgb
         #affine_matrix_rgb=self.kinect.getAffineTransform(world_coords, pixel_coords)
@@ -196,22 +199,21 @@ class StateMachine():
         ret, rotvec, transvec = cv2.solvePnP(world_coords,new_pixel_coords,camMatrix,distCoeffs)
         rotmat,jac = cv2.Rodrigues(rotvec)
         extmat = np.column_stack((rotmat,transvec))
-        projmat = camMatrix.dot(extmat)
-        projmat = np.vstack((projmat,np.array([0,0,0,1])))
 
-        
+        global solverot, solvetrans
+        solverot = np.linalg.inv(rotmat)
+        solvetrans = transvec
 
-        #extmat=np.append(extmat,np.array([[0,0,0,1]]),axis=0)
-        #print(exttmat)
-        print(projmat)
-
-
-
+    
+        ########################
+        #RGB to Depth transform#
+        ########################
         rgb_coords = self.kinect.rgb_click_points
         rgb_coords = rgb_coords[0:3,:]
+        print(rgb_coords)
         depth_coords = self.kinect.depth_click_points
         depth_coords = depth_coords[0:3,:]
-
+        print(depth_coords)
 
 
         # print(rgb_coords,depth_coords)
@@ -233,23 +235,15 @@ class StateMachine():
         # x=(np.linalg.inv(A.T.dot(A))).dot(A.T).dot(b.T)
         # x_matrix=np.reshape(x,(2,2))
 
-        global affine_rgb2depth
-        #affine_rgb2depth=x_matrix
-        #print(affine_rgb2depth)  
-
-
-
-
-
-        #global rgb2dep
+        global affine_rgb2depth, affine_depth2rgb
 
         rgb_coords = rgb_coords.astype('float32')
         depth_coords = depth_coords.astype('float32')
 
-        affine_rgb2depth = cv2.getAffineTransform(depth_coords, rgb_coords) #changed to affine from perspective
-        #dep2rgt2 = cv2.estimateRigidTransform(depth_coords, rgb_coords, 1)
-        print("Affine rgb2depth is",affine_rgb2depth)
-        #print(dep2rgt2)
+        affine_rgb2depth = cv2.getAffineTransform(rgb_coords, depth_coords) #changed to affine from perspective
+        
+        affine_depth2rgb = cv2.getAffineTransform(depth_coords, rgb_coords)
+        
         
 
        
@@ -316,8 +310,17 @@ class StateMachine():
     def return_affine(self):
         return affine_matrix_rgb
 
-    def return_correction_affine(self):
+    def return_rgb2depth(self):
         return affine_rgb2depth
+
+    def return_depth2rgb(self):
+        return affine_rgb2depth
+
+    def return_solvepnp(self):
+        return solverot, solvetrans
+
+    def return_intrinsic(self):
+        return camMatrix
 
     def calibration_state(self):
         return calibration_done
@@ -333,7 +336,70 @@ class StateMachine():
         self.status_message = "Calibration - Completed Calibration"
         time.sleep(1)
  
+    def click_and_grab(self):
+        if(self.kinect.new_click == True):
+            # Checking if a click has been made
+            # Finds the x and y location in RGB image of the clicked point
+            x=self.kinect.last_click[0]
+            y=self.kinect.last_click[1]
+
+        # Need to convert this rgb points to world coordinate
+
+        pix_center=self.pixel_center_loc()
+
+        # X and Y locations in the RGB space in pixels. Finding the location of these RGB points in world space
+        x=x-pix_center.item(0)
+        y=pix_center.item(1)-y
+
+        # Preparing pixel matrix for transform
+        pixel_value=np.array([x,y])
+        pixel_value=np.transpose(pixel_value)
+
+        # Extracting affine transform between rgb and depth
+        affine_rgb2depth=self.return_rgb2depth()
+
+        # Extrinsic Matrix
+        affine=self.return_affine()
+        affine=affine[0:2,0:2]
+
+        world_value=np.matmul(affine,pixel_value)
+
+        if(self.kinect.currentDepthFrame.any() != 0):
+            rgb_pt = np.array([[pixel_value[0],pixel_value[1],1]])
+            depth_value=np.matmul(affine_rgb2depth,rgb_pt.T)
+            z = self.kinect.currentDepthFrame[int(depth_value.item(1))][int(depth_value.item(0))]
+            Z = 12.36 * np.tan(float(z)/2842.5 + 1.1863)
+            Z=100
+
+        
+
+        phi=0
+        pose=[world_value[0],world_value[1],Z,0]
+
+        print ("X, Y and Z values of the point are noted",pose)
+
+        execute_states = kine.IK(pose)
+        for i, wp in enumerate(execute_states):
+            if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
+                pass
+            else:
+                print(wp)
+                print(type(wp))
+                initial_wp = self.tp.set_initial_wp()
+                final_wp = self.tp.set_final_wp(wp)
+                T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 1)
+                plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
+                self.tp.execute_plan(plan_pts, plan_velos)
+                self.rexarm.pause(1)
+                self.rexarm.toggle_gripper()
+                self.rexarm.toggle_gripper()
+        self.kinect.new_click = 0
+
+
+
+
     def execute(self):
+        '''
         execute_states= np.array([[ 0.0, 0.0, 0.0, 0.0, 0.0],
                                   [ 1.0, 0.8, 1.0, 0.5, 1.0],
                                   [-1.0,-0.8,-1.0,-0.5, -1.0],
@@ -359,8 +425,11 @@ class StateMachine():
         #for i,_ in enumerate(execute_states) :
         #    self.rexarm.set_positions(execute_states[i])
         #    self.rexarm.pause(1)
+        '''
+        self.click_and_grab()
         self.rexarm.get_feedback()
         self.next_state = "idle"
+
 
     def operation(self):
         self.status_message = "Operation - Recording User Positions"

@@ -1,6 +1,7 @@
 import numpy as np 
 import time
 from math import *
+from kinect import Kinect
 
 """
 TODO: build a trajectory generator and waypoint planner 
@@ -9,13 +10,14 @@ TODO: build a trajectory generator and waypoint planner
 """
 
 class TrajectoryPlanner():
-    def __init__(self, rexarm):
+    def __init__(self, rexarm, kinect):
         self.idle = True
         self.rexarm = rexarm
         self.num_joints = rexarm.num_joints
         self.initial_wp = [0.0]*self.num_joints
         self.final_wp = [0.0]*self.num_joints 
         self.dt = 0.05 # command rate
+        self.kinect = kinect
     
     def set_initial_wp(self):
         self.initial_wp = self.final_wp
@@ -103,3 +105,4 @@ class TrajectoryPlanner():
             self.rexarm.set_positions(plan_pts[i+look_ahead])
             self.rexarm.set_speeds(plan_velos[i])
             self.rexarm.pause(self.dt)
+

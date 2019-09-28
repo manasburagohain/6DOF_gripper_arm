@@ -111,7 +111,7 @@ class Gui(QMainWindow):
         """Objects Using Other Classes"""
         self.kinect = Kinect()
         self.rexarm = Rexarm((base,shld,elbw,wrst,wrst2), grip)
-        self.tp = TrajectoryPlanner(self.rexarm)
+        self.tp = TrajectoryPlanner(self.rexarm, self.kinect)
         self.sm = StateMachine(self.rexarm, self.tp, self.kinect)
     
         """ 
@@ -298,28 +298,37 @@ class Gui(QMainWindow):
                 if self.sm.calibration_state()==True:
                     pix_center=self.sm.pixel_center_loc()
 
+                    pixel_value=np.array([x,y])
+                    rgb_pt = np.array([[pixel_value[0],pixel_value[1],1]])
+                    affine_rgb2depth=self.sm.return_rgb2depth()
+                    depth_value=np.matmul(affine_rgb2depth,rgb_pt.T)
+                    
                     # X and Y locations in the RGB space in pixels
                     x=x-pix_center.item(0)
                     y=pix_center.item(1)-y
-
-                    # Extracting affine transform between rgb and depth
-                    affine_rgb2depth=self.sm.return_correction_affine()
-
                     # Preparing pixel matrix for transform
                     pixel_value=np.array([x,y])
                     pixel_value=np.transpose(pixel_value)
 
-                    # Extrinsic Matrix
+                    
                     affine=self.sm.return_affine()
                     affine=affine[0:2,0:2]
 
                     world_value=np.matmul(affine,pixel_value)
                     # self.kinect.currentDepthFrame = cv2.warpAffine(self.kinect.currentDepthFrame,affine_rgb2depth)
-                    rgb_pt = np.array([[pixel_value[0],pixel_value[1],1]])
-                    depth_value=np.matmul(affine_rgb2depth,rgb_pt.T)
+                    
+                    
                     #print(depth_value)
-                    #z = self.kinect.currentDepthFrame[int(depth_value.item(1))][int(depth_value.item(0))]
+                    z = self.kinect.currentDepthFrame[int(depth_value.item(1))][int(depth_value.item(0))]
                     Z = 12.36 * np.tan(float(z)/2842.5 + 1.1863)
+
+                    # rot,trans = self.sm.return_solvepnp()
+                    # cam = self.sm.return_intrinsic()
+
+                    # xyz_c = Z*rgb_pt.T
+                    # xyz_c = np.linalg.inv(cam).dot(xyz_c)
+                    # xyz_c = xyz_c - trans
+                    # world_value = xyz_c*rot
                     # -0.197*float(z) + 142.772 
                     self.ui.rdoutMouseWorld.setText("(%.0f,%.0f,%.1f)" % (world_value.item(0),world_value.item(1),Z))
                 else:
@@ -343,6 +352,7 @@ class Gui(QMainWindow):
         self.kinect.last_click[1] = y - MIN_Y
         self.kinect.new_click = True
         #print(self.kinect.last_click)
+
 
 """main function"""
 def main():

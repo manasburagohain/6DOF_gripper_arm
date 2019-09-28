@@ -146,7 +146,7 @@ def IK(pose):
         w2_theta=np.pi-shoulder_theta-elbow_theta-phi
 
         angles=np.array([base_theta, shoulder_theta, elbow_theta,w2_theta])
-        print (angles)
+        # print (angles)
 
         # Defining angle limits
         angle_limits = np.array([
@@ -164,7 +164,7 @@ def IK(pose):
                 return None
 
 
-        return (base_theta, shoulder_theta, elbow_theta,w2_theta)
+        return [[base_theta, np.pi-shoulder_theta, elbow_theta, 0, w2_theta]]
         pass
 
     else:
@@ -199,10 +199,3 @@ def to_s_matrix(w,v):
     Find the [s] matrix for the POX method e^([s]*theta)
     """
     pass
-
-if __name__ == '__main__':
-    x=float(sys.argv[1])
-    y=float(sys.argv[2])
-    z=float(sys.argv[3])
-    phi=float(sys.argv[4])
-    IK([x,y,z,phi])
