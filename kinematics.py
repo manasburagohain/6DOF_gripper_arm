@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+from math import *
 #expm is a matrix exponential function
 # from scipy.linalg import expm
 # from se3 import *
@@ -105,66 +106,43 @@ def IK(pose):
     # Inverse Kinematics Equations for Elbow Up Configuration
 
     # Extracting the required information from pose
+   # Given link geometry
+    l1=118
+    l2=100
+    l3=112
+    l4=109
+
     x=pose[0]
     y=pose[1]
     z=pose[2]
-    phi=pose[3]
 
-    # Defining the length of links
-    # l1=122.14
-    l1=112
-    l2=105
-    l3=126.77
-    l4=122.12
+    # extended distance
+    d=sqrt(x**2+y**2)
+    if d<=l2+l3:
+        # Base angle
+        base_theta = atan2(y,x)
+        #print(base_theta/np.pi*180)
 
-    if z<=(l2+l3+l4): 
-        #  Calculating the end effector location
-        end_eff_dist=np.sqrt(x**2+y**2)
+        # elbow angle theta2
+        phi3 = np.arctan2(l1-z,d)
+        phi2 = np.arctan2(l4-(l1-z),d)
+        m1_squared = d**2+(l4-(l1-z))**2
+        elbow_theta = np.pi-acos((l2**2 + l3**2 - m1_squared)/(2*l2*l3))
+        #print(elbow_theta/np.pi*180)
 
-        # Calculating the angle of the base
-        # Arctan convention is (y,x)
-        base_theta=np.arctan2(y,x)
+        # shoulder angle theta1
+        phi1 = elbow_theta - acos((m1_squared+l3**2-l2**2)/(2*l3*sqrt(m1_squared)))
+        shoulder_theta = np.pi-(phi1+phi2)
+        #print(shoulder_theta/np.pi*180)
 
-        # Calculation for angle for the elbow
+        # wrist angle theta3
+        w2_theta = np.pi-(elbow_theta-phi1+np.pi/2-phi2)
+        #print(w2_theta/np.pi*180)
 
-        c_y=z+l4*np.cos(phi)-l1
-        c_x=end_eff_dist-l4*np.sin(phi)
+        print(base_theta,shoulder_theta-np.pi/2,elbow_theta,0,w2_theta)
+        print("Angle in degrees",base_theta*180/np.pi, shoulder_theta*180/np.pi, elbow_theta*180/np.pi,w2_theta*180/np.pi)
 
-        d_c=np.sqrt(c_x**2+c_y**2)
-
-        elbow_theta=np.arccos((d_c**2-l2**2-l3**2)/(2*l2*l3))
-
-        # Calculation for angle for the shoulder
-
-        theta_shoulder_1=np.arccos((l3**2-d_c**2-l2**2)/(-2*l2*d_c))
-        theta_shoulder_2=np.arctan2(c_y,c_x)
-
-        shoulder_theta=np.pi/2-theta_shoulder_1-theta_shoulder_2
-
-        # Calculation for angle for the wrist
-     
-        w2_theta=np.pi-shoulder_theta-elbow_theta-phi
-
-        angles=np.array([base_theta, shoulder_theta, elbow_theta,w2_theta])
-        # print (angles)
-
-        # Defining angle limits
-        angle_limits = np.array([
-                            [-180, 179.99],
-                            [-122, 122],
-                            [-115, 104],
-                            [-150, 150],
-                            [-128, 129],], dtype=np.float)*(180/np.pi)
-
-        # Checking if the angle are within limits
-
-        for i in range(len(angles)):
-            if angles[i]<angle_limits[i][0] or angles[i]>angle_limits[i][1]:
-                print ("Not reachable")
-                return None
-
-
-        return [[base_theta, np.pi-shoulder_theta, elbow_theta, 0, w2_theta]]
+        return [[base_theta,shoulder_theta-np.pi/2,elbow_theta,0,w2_theta]]
         pass
 
     else:
@@ -177,7 +155,7 @@ def get_euler_angles_from_T(T):
     """
     TODO: implement this function
     return the Euler angles from a T matrix
-    
+   
     """
     pass
 
@@ -186,7 +164,7 @@ def get_pose_from_T(T):
     TODO: implement this function
     return the joint pose from a T matrix
     of the form (x,y,z,phi) where phi is rotation about base frame y-axis
-    
+   
     """
     pass
 
@@ -199,3 +177,12 @@ def to_s_matrix(w,v):
     Find the [s] matrix for the POX method e^([s]*theta)
     """
     pass
+
+#
+# if __name__ == '__main__':
+#     x=float(sys.argv[1])#124.46
+#     y=float(sys.argv[2])#129.54
+#     z=float(sys.argv[3])#50.8
+#     # print("X,Y,Z:", [124.46, 129.54, 50.8])
+    # print("expecting:", [46.11, 137-90, 59.74,0, 75.22])
+    # IK([x,y,z])

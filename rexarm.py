@@ -26,7 +26,7 @@ class Rexarm():
         """TODO: Find the physical angle limits of the Rexarm. Remember to keep track of this if you include more motors"""
         self.angle_limits = np.array([
                             [-180, 179.99],
-                            [-122, 122],
+                            [-122+90, 122+90],
                             [-115, 104],
                             [-150, 150],
                             [-128, 129],], dtype=np.float)*D2R

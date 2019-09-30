@@ -369,15 +369,17 @@ class StateMachine():
             depth_value=np.matmul(affine_rgb2depth,rgb_pt.T)
             z = self.kinect.currentDepthFrame[int(depth_value.item(1))][int(depth_value.item(0))]
             Z = 12.36 * np.tan(float(z)/2842.5 + 1.1863)
-            Z=100
+            Z=50
 
         
 
-        phi=0
-        pose=[world_value[0],world_value[1],Z,0]
+        # phi=0
+        pose=[world_value[0]*10,world_value[1]*10,Z]
 
         print ("X, Y and Z values of the point are noted",pose)
-
+        #pose=[124.46,129.54,50.8]
+        #pose=[-123, -120, 50]
+        #pose=[162,-94, 50]
         execute_states = kine.IK(pose)
         for i, wp in enumerate(execute_states):
             if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
