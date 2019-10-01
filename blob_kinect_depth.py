@@ -63,26 +63,28 @@ for i in range(len(stack_thresh_lower_array)):
 	im2, contours, hierarchy = cv2.findContours(closing, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
 # 	# Find the largest contour # May need to change this to check if area between predefined limits
-	contour_sizes = [(cv2.contourArea(contour), contour) for contour in contours if (cv2.contourArea(contour)<900)]
+	contour_sizes = [(cv2.contourArea(contour), contour) for contour in contours if (cv2.contourArea(contour)<900 and cv2.contourArea(contour)>400)]
 
-	print (contour_sizes)
-	biggest_contour = max(contour_sizes, key=lambda x: x[0])[1]
+	# print (contour_sizes)
+	# biggest_contour = max(contour_sizes, key=lambda x: x[0])[1]
 
-	print(cv2.contourArea(biggest_contour))
+	# print(cv2.contourArea(biggest_contour))
 
 # 	# Drawing the largest contour
 	# cv2.drawContours(depth_frame, biggest_contour, -1, (255,255,0), 3)
 
 # 	# Drawing a bounding rectangle for the detected box
-	rect = cv2.minAreaRect(biggest_contour)
-	box = cv2.boxPoints(rect)
-	box = np.int0(box)
-	center=rect[0]
-	angle = rect[2]
-	cv2.drawContours(depth_frame,[box],0,(0,0,255),2)
+	for contour in contour_sizes:
+
+		rect = cv2.minAreaRect(contour[1])
+		box = cv2.boxPoints(rect)
+		box = np.int0(box)
+		center=rect[0]
+		angle = rect[2]
+		cv2.drawContours(depth_frame,[box],0,(0,0,255),2)
 
 # 	# Marking the center of the box
-	depth_frame[int(center[1])-2:int(center[1])+2,int(center[0])-2:int(center[0])+2]=[0]
+		depth_frame[int(center[1])-2:int(center[1])+2,int(center[0])-2:int(center[0])+2]=[0]
 
 	# Print Block Height
 	# z = kinect.currentDepthFrame[int(center[1])][int(center[0])]

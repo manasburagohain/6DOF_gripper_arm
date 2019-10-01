@@ -127,6 +127,7 @@ class Gui(QMainWindow):
         self.ui.btn_task5.clicked.connect(self.FK_check)
         self.ui.btnUser1.setText("Calibrate")
         self.ui.btnUser1.clicked.connect(partial(self.sm.set_next_state, "calibrate"))
+        self.ui.btnUser2.clicked.connect(self.block_detect)
         self.ui.sldrBase.valueChanged.connect(self.sliderChange)
         self.ui.sldrShoulder.valueChanged.connect(self.sliderChange)
         self.ui.sldrElbow.valueChanged.connect(self.sliderChange)
@@ -231,6 +232,9 @@ class Gui(QMainWindow):
     def FK_check(self):
         self.sm.set_next_state("FK_check")
 
+    def block_detect(self):
+        self.sm.set_next_state("block_detect")
+
     def record(self):
         if self.sm.current_state == "operation" :
             rec_joints = self.rexarm.get_positions()
@@ -329,7 +333,9 @@ class Gui(QMainWindow):
                     # xyz_c = np.linalg.inv(cam).dot(xyz_c)
                     # xyz_c = xyz_c - trans
                     # world_value = xyz_c*rot
-                    # -0.197*float(z) + 142.772 
+                    # -0.197*float(z) + 142.772
+                    # self.kinect.detectBlocksInDepthImage()
+                    # self.kinect.processVideoFrame() 
                     self.ui.rdoutMouseWorld.setText("(%.0f,%.0f,%.1f)" % (world_value.item(0),world_value.item(1),Z))
                 else:
                     self.ui.rdoutMouseWorld.setText("(-,-,-)")

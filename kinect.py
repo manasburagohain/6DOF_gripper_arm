@@ -39,7 +39,7 @@ class Kinect():
        
 
     def processVideoFrame(self):
-        cv2.drawContours(self.currentVideoFrame,self.block_contours,-1,(255,0,255),3)
+        cv2.drawContours(self.currentVideoFrame,self.block_contours,-1,(255,255,255),3)
 
 
     def captureDepthFrame(self):
@@ -148,6 +148,7 @@ class Kinect():
 
         # Loading the frame from the Kinect Depth Camera
         depth_frame = freenect.sync_get_depth()[0]
+        self.block_contours = ([])
 
         # Extracting required depth informmation from the appropriate bits
         np.clip(depth_frame,0,2**10 - 1,depth_frame)
@@ -167,7 +168,7 @@ class Kinect():
         for i in range(len(stack_thresh_lower_array)):
             # Thresholding the image
             mask = cv2.inRange(depth_frame, stack_thresh_lower_array[i], stack_thresh_higher_array[i])
-
+            print(i)
             # Performing Morphological Operations on image
             opening = cv2.morphologyEx(mask, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT,(3,3)))
             closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT,(3,3)))
@@ -176,27 +177,33 @@ class Kinect():
             im2, contours, hierarchy = cv2.findContours(closing, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
             # Find the largest contour and ensuring area is within a defined limit
-            contour_sizes = [(cv2.contourArea(contour), contour) for contour in contours if (cv2.contourArea(contour)>700 and cv2.contourArea(contour)<900)]
-            biggest_contour = max(contour_sizes, key=lambda x: x[0])[1]
+            contour_sizes = [(cv2.contourArea(contour), contour) for contour in contours if (cv2.contourArea(contour)>400 and cv2.contourArea(contour)<900)]
+            # biggest_contour = max(contour_sizes, key=lambda x: x[0])[1]
 
+            for contour in contours:
+                if (cv2.contourArea(contour)>400 and cv2.contourArea(contour)<900):
+                    self.block_contours =  np.append(self.block_contours,contour)
+            print(self.block_contours.shape[0])
+            
             # Drawing the largest contour
             # cv2.drawContours(depth_frame, biggest_contour, -1, (255,255,0), 3)
 
             # Drawing a bounding rectangle for the detected box
-            rect = cv2.minAreaRect(biggest_contour)
-            box = cv2.boxPoints(rect)
-            box = np.int0(box)
-            center=rect[0]
-            angle = rect[2]
-            cv2.drawContours(depth_frame,[box],0,(0,0,255),2)
-
+            for contour in contour_sizes:
+                rect = cv2.minAreaRect(contour[1])
+                box = cv2.boxPoints(rect)
+                box = np.int0(box)
+                center=rect[0]
+                angle = rect[2]
+                cv2.drawContours(depth_frame,[box],0,(0,0,255),2)
+                
             # Marking the center of the box
-            depth_frame[int(center[1])-2:int(center[1])+2,int(center[0])-2:int(center[0])+2]=[0]
+                depth_frame[int(center[1])-2:int(center[1])+2,int(center[0])-2:int(center[0])+2]=[0]
 
-            block_coordinates=np.array([])
+                block_coordinates=np.array([])
             # Storing the center coordinates in np array
            
-            block_coordinates=np.append(block_coordinates,[center[0],center[1],1])
+                block_coordinates=np.append(block_coordinates,[center[0],center[1],1])
 
             # Print Block Height
             # z = kinect.currentDepthFrame[int(center[1])][int(center[0])]
@@ -223,18 +230,18 @@ class Kinect():
 
             # # Marking the COMon the image
             # img[cy-2:cy+2,cx-2:cx+2]=[0,0,255]
+        cv2.imwrite('test.jpg',depth_frame)
+        # cv2.namedWindow("window",cv2.WINDOW_AUTOSIZE)
+        # cv2.namedWindow("mask",cv2.WINDOW_AUTOSIZE)
+        # cv2.imshow('window', depth_frame)
+        # cv2.imshow('mask', closing)
 
-        cv2.namedWindow("window",cv2.WINDOW_AUTOSIZE)
-        cv2.namedWindow("mask",cv2.WINDOW_AUTOSIZE)
-        cv2.imshow('window', depth_frame)
-        cv2.imshow('mask', closing)
-
-        time.sleep(5) # Pausing for 5 seconds
+        # time.sleep(5) # Pausing for 5 seconds
         # while True:
         #     ch = 0xFF & cv2.waitKey(10)
         #     if ch == 0x1B:
         #         break
-        cv2.destroyAllWindows()
+        # cv2.destroyAllWindows()
        
 
 
@@ -242,40 +249,40 @@ class Kinect():
 
         # RGB Camera portion of the image
 
-        img = freenect.sync_get_video()[0]
+        # img = freenect.sync_get_video()[0]
 
-        # Converting the Camera frame from RGB to HSV
-        bgr_frame = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        hsv = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2HSV)
+        # # Converting the Camera frame from RGB to HSV
+        # bgr_frame = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        # hsv = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2HSV)
 
-        # Definining the HSV Values
-        color_order=['yellow','orange','pink','black','blue','green','purple','red']
-        color_lower_array=np.array([[0,0,0],[0,100,170],[165,90,210],[0,20,20],[20,110,20],[40,5,88],[140,70,80],[169,120,120]])
-        color_higher_array=np.array([[200,255,255],[40,255,210],[173,215,255],[180,110,80],[110,130,80],[80,150,200],[160,150,210],[180,255,210]])
+        # # Definining the HSV Values
+        # color_order=['yellow','orange','pink','black','blue','green','purple','red']
+        # color_lower_array=np.array([[0,0,0],[0,100,170],[165,90,210],[0,20,20],[20,110,20],[40,5,88],[140,70,80],[169,120,120]])
+        # color_higher_array=np.array([[200,255,255],[40,255,210],[173,215,255],[180,110,80],[110,130,80],[80,150,200],[160,150,210],[180,255,210]])
 
-        # Extracting the RGB to Depth Affine Matrix
-        affine_rgb2depth=self.sm.return_rgb2depth()
+        # # Extracting the RGB to Depth Affine Matrix
+        # affine_rgb2depth=self.sm.return_rgb2depth()
        
-        # Converting each x,y box location in depth frame to x,y in RGB frame
-        for i in range (block_coordinates):
-            block_coordinates[i]=np.matmul(affine_rgb2depth,block_coordinates[i])
+        # # Converting each x,y box location in depth frame to x,y in RGB frame
+        # for i in range (block_coordinates):
+        #     block_coordinates[i]=np.matmul(affine_rgb2depth,block_coordinates[i])
        
-        # Extracting the H,S and V values at the center of the block in the RGB frame
-        # Creating list to store the detected colors
-        color=[]
+        # # Extracting the H,S and V values at the center of the block in the RGB frame
+        # # Creating list to store the detected colors
+        # color=[]
 
-        for i in range(block_coordinates.size):
-            h = hsv[block_coordinates[i+1]][block_coordinates[i]][0]
-            s = hsv[block_coordinates[i+1]][block_coordinates[i]][1]
-            v = hsv[block_coordinates[i+1]][block_coordinates[i]][2]
-            rgb_hsv_values=np.array([])
-            rgb_hsv_values=np.array([[h,s,v]])
+        # for i in range(block_coordinates.size):
+        #     h = hsv[block_coordinates[i+1]][block_coordinates[i]][0]
+        #     s = hsv[block_coordinates[i+1]][block_coordinates[i]][1]
+        #     v = hsv[block_coordinates[i+1]][block_coordinates[i]][2]
+        #     rgb_hsv_values=np.array([])
+        #     rgb_hsv_values=np.array([[h,s,v]])
 
-            if (rgb_hsv_values[0]>=color_lower_array[i][0] and rgb_hsv_values[0]<=color_higher_array[i][0]) and (rgb_hsv_values[1]>=color_lower_array[i][1] and rgb_hsv_values[1]<=color_higher_array[i][1]) and (rgb_hsv_values[2]>=color_lower_array[i][2] and rgb_hsv_values[2]<=color_higher_array[i][2]):
-                color.append(color_order[i])
+        #     if (rgb_hsv_values[0]>=color_lower_array[i][0] and rgb_hsv_values[0]<=color_higher_array[i][0]) and (rgb_hsv_values[1]>=color_lower_array[i][1] and rgb_hsv_values[1]<=color_higher_array[i][1]) and (rgb_hsv_values[2]>=color_lower_array[i][2] and rgb_hsv_values[2]<=color_higher_array[i][2]):
+        #         color.append(color_order[i])
 
-            # cv2.setMouseCallback("window",mouse_callback)
+        #     # cv2.setMouseCallback("window",mouse_callback)
 
-        print (color)
+        # print (color)
 
-        pass
+        # pass

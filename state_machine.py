@@ -65,7 +65,9 @@ class StateMachine():
             if(self.next_state == "opplay"):
                 self.opplay()    
             if(self.next_state == "FK_check"):
-                self.FK_check()    
+                self.FK_check()
+            if(self.next_state == "block_detect"):
+                self.block_detect()    
         
         if(self.current_state == "operation"):
             if(self.next_state == "idle"):
@@ -81,7 +83,9 @@ class StateMachine():
             if(self.next_state == "idle"):
                 self.idle()
         
-        
+        if(self.current_state == "block_detect"):
+            if(self.set_next_state == "idle"):
+                self.idle()
 
         if(self.current_state == "estop"):
             self.next_state = "estop"
@@ -471,6 +475,11 @@ class StateMachine():
         self.rexarm.get_feedback()
         self.next_state = "idle"
 
+    def block_detect(self):
+        self.status_message = "Detecting Blocks"
+        self.current_state = "block_detect"
+        self.kinect.detectBlocksInDepthImage()
+        self.next_state = "idle"
 
     def FK_check(self):
         self.status_message = "Checking Forward Kinematics"
