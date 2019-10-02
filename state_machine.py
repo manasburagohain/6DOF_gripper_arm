@@ -4,6 +4,8 @@ import cv2
 import csv
 from math import * 
 import kinematics as kine
+from PyQt4.QtCore import (QThread, Qt, pyqtSignal, pyqtSlot, QTimer)
+from PyQt4.QtGui import (QPixmap, QImage, QApplication, QWidget, QLabel, QMainWindow, QCursor)
 """
 TODO: Add states and state functions to this class
         to implement all of the required logic for the armlab
@@ -342,73 +344,97 @@ class StateMachine():
         time.sleep(1)
  
     def click_and_grab(self):
+        print("Waiting to click the block")
+        time.sleep(5)
         if(self.kinect.new_click == True):
-            pose=self.WC
-            # Checking if a click has been made
-            # Finds the x and y location in RGB image of the clicked point
-            # x=self.kinect.last_click[0]-240
-            # y=self.kinect.last_click[1]-40
+            # pose=self.WC
+            x =self.kinect.last_click[0]
+            y=self.kinect.last_click[1]
+            print(x,y)
+            """ Change coordinates to image axis """
+            # x = x - 240
+            # x = y - 40
 
-            # # Preparing pixel matrix for transform
-            # pixel_value=np.array([x,y])
-            # pixel_value=np.transpose(pixel_value)
+            # For finding the Z depth
+            pixel_value=np.array([x,y])
+            rgb_pt = np.array([[pixel_value[0],pixel_value[1],1]])
+            affine_rgb2depth=self.return_rgb2depth()
+            depth_value=np.matmul(affine_rgb2depth,rgb_pt.T)
+            z = self.kinect.currentDepthFrame[int(depth_value.item(1))][int(depth_value.item(0))]
+            Z = 12.36 * np.tan(float(z)/2842.5 + 1.1863)
+            Z = 95-Z
 
-            # # Extracting affine transform between rgb and depth
-            # affine_rgb2depth=self.return_rgb2depth()
+            # X and Y locations in the RGB space in pixels
+            pix_center=self.pixel_center_loc()
+            x=x-pix_center.item(0)
+            y=pix_center.item(1)-y
+            # Preparing pixel matrix for transform
+            pixel_value=np.array([x,y])
+            pixel_value=np.transpose(pixel_value)
+            affine=self.return_affine()
+            affine=affine[0:2,0:2]
+            world_value=np.matmul(affine,pixel_value)
 
-            # # Extrinsic Matrix
-            # affine=self.return_affine()
-            # affine=affine[0:2,0:2]
-            # # Need to convert this rgb points to world coordinate
-
-            # pix_center=self.pixel_center_loc()
-
-            # # X and Y locations in the RGB space in pixels. Finding the location of these RGB points in world space
-            # x=x-pix_center.item(0)
-            # y=pix_center.item(1)-y
-
-
-            
-
-            # if(self.kinect.currentDepthFrame.any() != 0):
-            #     rgb_pt = np.array([[pixel_value[0],pixel_value[1],1]])
-            #     depth_value=np.matmul(affine_rgb2depth,rgb_pt.T)
-            #     pixel_value=np.array([x,y])
-            #     pixel_value=np.transpose(pixel_value)
-            #     world_value=np.matmul(affine,pixel_value)
-            #     z = self.kinect.currentDepthFrame[int(depth_value.item(1))][int(depth_value.item(0))]
-            #     print(z)
-            #     Z = 12.36 * np.tan(float(z)/2842.5 + 1.1863)
-            #     print(Z)
-            #     ZZ = (95-Z)*10
-            #     print(ZZ)
-            #     #Z=50
-
-            
-
-            # phi=0
-
-            print ("X, Y and Z values of the point are noted",pose)
+            pose1=[world_value.item(0)*10,world_value.item(1)*10,(Z+3)*10]
+            pose2=[world_value.item(0)*10,world_value.item(1)*10,Z*10]
+            print ("X, Y and Z values of the point are noted",pose2)
             #pose=[124.46,129.54,50.8]
             #pose=[-123, -120, 50]
             #pose=[162,-94, 50]
-            pose = [160,100,40]
-            execute_states = kine.IK(pose)
-            self.rexarm.toggle_gripper()
-            for i, wp in enumerate(execute_states):
-                if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
-                    pass
-                else:
-                    print(wp)
-                    print(type(wp))
-                    initial_wp = self.tp.set_initial_wp()
-                    final_wp = self.tp.set_final_wp(wp)
-                    T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 1)
-                    plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
-                    self.tp.execute_plan(plan_pts, plan_velos)
-                    self.rexarm.pause(1)
-            self.rexarm.toggle_gripper()
-            self.kinect.new_click = 0
+            # pose = [160,100,40]
+            execute_states = kine.IK(pose1)
+
+            if execute_states is not None:
+                self.rexarm.toggle_gripper() # open
+                for i, wp in enumerate(execute_states):
+                    if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
+                        pass
+                    else:
+                        print(wp)
+                        print(type(wp))
+                        initial_wp = self.tp.set_initial_wp()
+                        final_wp = self.tp.set_final_wp(wp)
+                        T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 1)
+                        plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
+                        self.tp.execute_plan(plan_pts, plan_velos)
+                        self.rexarm.pause(1)
+
+                down_states = kine.IK(pose2)
+                for i, wp in enumerate(down_states):
+                    if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
+                        pass
+                    else:
+                        print(wp)
+                        print(type(wp))
+                        initial_wp = self.tp.set_initial_wp()
+                        final_wp = self.tp.set_final_wp(wp)
+                        T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 1)
+                        plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
+                        self.tp.execute_plan(plan_pts, plan_velos)
+                        self.rexarm.pause(1)
+                self.rexarm.toggle_gripper() #close
+                self.kinect.new_click = 0
+
+                ## grab
+                idlePos = [[0.0, 0, 0.0, 0.0, -np.pi/4]]
+                for i, wp in enumerate(idlePos):
+                    if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
+                        pass
+                    else:
+                        print(wp)
+                        print(type(wp))
+                        initial_wp = self.tp.set_initial_wp()
+                        final_wp = self.tp.set_final_wp(wp)
+                        T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 1)
+                        plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
+                        self.tp.execute_plan(plan_pts, plan_velos)
+                        self.rexarm.pause(1)
+                self.rexarm.toggle_gripper()
+                self.rexarm.toggle_gripper()
+            else:
+                print("Not Reachable, Retry")
+
+
 
 
 
