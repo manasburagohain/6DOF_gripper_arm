@@ -36,6 +36,8 @@ MAX_Y = 520
 BAUDRATE   = 1000000
 DEVICENAME = "/dev/ttyACM0".encode('utf-8')
 
+""" World coords"""
+worldcoords = 0
 """Threads"""
 class VideoThread(QThread):
     updateFrame = pyqtSignal(QImage, QImage)
@@ -325,6 +327,7 @@ class Gui(QMainWindow):
                     #print(depth_value)
                     z = self.kinect.currentDepthFrame[int(depth_value.item(1))][int(depth_value.item(0))]
                     Z = 12.36 * np.tan(float(z)/2842.5 + 1.1863)
+                    ZZ = 95-Z
 
                     # rot,trans = self.sm.return_solvepnp()
                     # cam = self.sm.return_intrinsic()
@@ -336,10 +339,10 @@ class Gui(QMainWindow):
                     # -0.197*float(z) + 142.772
                     # self.kinect.detectBlocksInDepthImage()
                     # self.kinect.processVideoFrame() 
-                    self.ui.rdoutMouseWorld.setText("(%.0f,%.0f,%.1f)" % (world_value.item(0),world_value.item(1),Z))
+                    self.ui.rdoutMouseWorld.setText("(%.0f,%.0f,%.1f)" % (world_value.item(0),world_value.item(1),ZZ))
+                    self.sm.WC = [world_value.item(0)*10,world_value.item(1)*10,ZZ*10]
                 else:
                     self.ui.rdoutMouseWorld.setText("(-,-,-)")
-
 
     def mousePressEvent(self, QMouseEvent):
         """ 

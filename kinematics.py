@@ -108,9 +108,9 @@ def IK(pose):
     # Extracting the required information from pose
    # Given link geometry
     l1=118
-    l2=100
+    l2=99
     l3=112
-    l4=109
+    l4=85.5
 
     x=pose[0]
     y=pose[1]
