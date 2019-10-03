@@ -111,7 +111,9 @@ class Kinect():
         pts1 = coord1[0:3].astype(np.float32)
         pts2 = coord2[0:3].astype(np.float32)
         print(cv2.getAffineTransform(pts1,pts2))
-        return cv2.getAffineTransform(pts1,pts2)
+        self.depth2rgb_affine = cv2.getAffineTransform(pts1,pts2)
+        # print("calcAffine")
+        return self.depth2rgb_affine
 
 
     def registerDepthFrame(self, frame):
@@ -119,7 +121,8 @@ class Kinect():
         TODO:
         Using an Affine transformation, transform the depth frame to match the RGB frame
         """
-        pass
+        # print("warpAffine")
+        return cv2.warpAffine(frame,self.depth2rgb_affine,(640,480))
 
     def loadCameraCalibration(self):
         """
@@ -147,7 +150,7 @@ class Kinect():
         """
 
         # Loading the frame from the Kinect Depth Camera
-        depth_frame = freenect.sync_get_depth()[0]
+        depth_frame = self.currentDepthFrame
         self.block_contours = ([])
 
         # Extracting required depth informmation from the appropriate bits

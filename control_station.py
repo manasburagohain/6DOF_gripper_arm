@@ -315,21 +315,12 @@ class Gui(QMainWindow):
 
                     # Taking in the pixel values in camera frame and transforming to the kinect depth frame
                     pixel_value=np.array([x,y])
-                    rgb_pt = np.array([[pixel_value[0],pixel_value[1],1]])
-                    # Extracting the affine matrix computed during camera calibration
-                    affine_rgb2depth=self.sm.return_rgb2depth()
-                    # Depth value in 10 bits at corresponding x,y location
-                    depth_value=np.matmul(affine_rgb2depth,rgb_pt.T)
                     # Converting 10 bit depth to real distance using provided analytical function
-                    z = self.kinect.currentDepthFrame[int(depth_value.item(1))][int(depth_value.item(0))]
+                    z = self.kinect.currentDepthFrame[int(pixel_value.item(1))][int(pixel_value.item(0))]
                     Z = 12.36 * np.tan(float(z)/2842.5 + 1.1863)
                     # 95 cm marks the z location of the base plane wrt to the camera. Subtracting 95 to measure +z from the base plane
                     Z_modified = 95-Z
-                    affine_dep2rgb=self.sm.return_depth2rgb()
-
-                    self.kinect.currentDepthFrame=cv2.warpAffine(self.kinect.currentDepthFrame,affine_dep2rgb,(480,640))
-
-                    cv2.imwrite('test2.jpg',self.kinect.currentDepthFrame)
+                    
                     #############################################
                     # 		CAMERA FRAME TO WORLD FRAME         #
                  	#############################################

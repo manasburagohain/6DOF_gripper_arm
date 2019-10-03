@@ -226,20 +226,11 @@ class StateMachine():
         # AFFINE TRANSFORM FROM RGB TO DEPTH FRAME AND VICE-VERSA    #
         ##############################################################
 
-        rgb_coords = self.kinect.rgb_click_points
-        rgb_coords = rgb_coords[0:3,:]
-        depth_coords = self.kinect.depth_click_points
-        depth_coords = depth_coords[0:3,:]
-
         global affine_rgb2depth, affine_depth2rgb
 
-        # Generating inputs for OpenCV functions in desired data type format
-        rgb_coords = rgb_coords.astype('float32')
-        depth_coords = depth_coords.astype('float32')
-
-        affine_rgb2depth = cv2.getAffineTransform(rgb_coords, depth_coords) #changed to affine from perspective
-        affine_depth2rgb = cv2.getAffineTransform(depth_coords, rgb_coords)
-        
+        affine_rgb2depth = self.kinect.getAffineTransform(self.kinect.rgb_click_points,self.kinect.depth_click_points) #changed to affine from perspective
+        affine_depth2rgb = self.kinect.getAffineTransform(self.kinect.depth_click_points,self.kinect.rgb_click_points)
+        self.kinect.kinectCalibrated = True        
 
         ##################
         #Trying Solve PnP#
