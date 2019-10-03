@@ -88,7 +88,7 @@ class StateMachine():
                 self.idle()
         
         if(self.current_state == "block_detect"):
-            if(self.set_next_state == "idle"):
+            if(self.next_state == "idle"):
                 self.idle()
 
         if(self.current_state == "estop"):
@@ -239,6 +239,7 @@ class StateMachine():
 
         affine_rgb2depth = cv2.getAffineTransform(rgb_coords, depth_coords) #changed to affine from perspective
         affine_depth2rgb = cv2.getAffineTransform(depth_coords, rgb_coords)
+        
 
         ##################
         #Trying Solve PnP#
@@ -505,6 +506,7 @@ class StateMachine():
         self.status_message = "Detecting Blocks"
         self.current_state = "block_detect"
         self.kinect.detectBlocksInDepthImage()
+        print("we back son")
         self.next_state = "idle"
 
     def FK_check(self):

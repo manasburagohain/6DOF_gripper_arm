@@ -162,9 +162,9 @@ class Kinect():
 
         # Defining np array for storing block coordinates
         block_coordinates=np.array([])
-
         # For each threshold in stack performing the below operations (This is used to detect block stacks up to 5)
-
+        count = 0
+        countin = 0
         for i in range(len(stack_thresh_lower_array)):
             # Thresholding the image
             mask = cv2.inRange(depth_frame, stack_thresh_lower_array[i], stack_thresh_higher_array[i])
@@ -179,18 +179,23 @@ class Kinect():
             # Find the largest contour and ensuring area is within a defined limit
             contour_sizes = [(cv2.contourArea(contour), contour) for contour in contours if (cv2.contourArea(contour)>400 and cv2.contourArea(contour)<900)]
             # biggest_contour = max(contour_sizes, key=lambda x: x[0])[1]
-
+            if i == 0:
+                block_contours = []
+            # print(contours)
             for contour in contours:
                 if (cv2.contourArea(contour)>400 and cv2.contourArea(contour)<900):
-                    self.block_contours =  np.append(self.block_contours,contour)
-            print(self.block_contours.shape[0])
-            
+                    countin +=1
+                    block_contours.append(contour)
+            # print(block_contours)
             # Drawing the largest contour
+
             # cv2.drawContours(depth_frame, biggest_contour, -1, (255,255,0), 3)
 
             # Drawing a bounding rectangle for the detected box
-            for contour in contour_sizes:
-                rect = cv2.minAreaRect(contour[1])
+            for contour in block_contours:
+                count += 1
+                print(contour)
+                rect = cv2.minAreaRect(contour)
                 box = cv2.boxPoints(rect)
                 box = np.int0(box)
                 center=rect[0]
@@ -230,6 +235,7 @@ class Kinect():
 
             # # Marking the COMon the image
             # img[cy-2:cy+2,cx-2:cx+2]=[0,0,255]
+        self.block_contours = block_contours
         cv2.imwrite('test.jpg',depth_frame)
         # cv2.namedWindow("window",cv2.WINDOW_AUTOSIZE)
         # cv2.namedWindow("mask",cv2.WINDOW_AUTOSIZE)
@@ -286,3 +292,4 @@ class Kinect():
         # print (color)
 
         # pass
+        return

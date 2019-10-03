@@ -325,9 +325,13 @@ class Gui(QMainWindow):
                     Z = 12.36 * np.tan(float(z)/2842.5 + 1.1863)
                     # 95 cm marks the z location of the base plane wrt to the camera. Subtracting 95 to measure +z from the base plane
                     Z_modified = 95-Z
+                    affine_dep2rgb=self.sm.return_depth2rgb()
 
-                 	#############################################
-                 	# 		CAMERA FRAME TO WORLD FRAME         #
+                    self.kinect.currentDepthFrame=cv2.warpAffine(self.kinect.currentDepthFrame,affine_dep2rgb,(480,640))
+
+                    cv2.imwrite('test2.jpg',self.kinect.currentDepthFrame)
+                    #############################################
+                    # 		CAMERA FRAME TO WORLD FRAME         #
                  	#############################################
 
                     # Extracting the origin of the camera frame (Following 4 quadrant system)

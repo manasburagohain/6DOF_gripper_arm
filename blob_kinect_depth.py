@@ -49,7 +49,7 @@ stack_thresh_higher_array=np.array([[177],[175],[170],[165],[160]])
 # find color at that specific location
 
 # # Performing Operations on camera frames to process the output for all the colors
-
+count = 0
 for i in range(len(stack_thresh_lower_array)):
 	# Thresholding the image
 	mask = cv2.inRange(depth_frame, stack_thresh_lower_array[i], stack_thresh_higher_array[i])
@@ -75,7 +75,7 @@ for i in range(len(stack_thresh_lower_array)):
 
 # 	# Drawing a bounding rectangle for the detected box
 	for contour in contour_sizes:
-
+		count+=1
 		rect = cv2.minAreaRect(contour[1])
 		box = cv2.boxPoints(rect)
 		box = np.int0(box)
@@ -109,7 +109,7 @@ for i in range(len(stack_thresh_lower_array)):
 
 # 	# # Marking the COMon the image
 # 	# img[cy-2:cy+2,cx-2:cx+2]=[0,0,255]
-
+print(count)
 cv2.namedWindow("window",cv2.WINDOW_AUTOSIZE)
 cv2.namedWindow("mask",cv2.WINDOW_AUTOSIZE)
 cv2.imshow('window', depth_frame)
