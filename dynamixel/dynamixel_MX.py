@@ -38,7 +38,7 @@ ADDR_PUNCH               = 48
 
 PROTOCOL                 = 1
 VERBOSE                  = 0
-RETRIES                  = 20
+RETRIES                  = 30
 
 def print_v(arg):
     if(VERBOSE):

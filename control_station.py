@@ -296,38 +296,58 @@ class Gui(QMainWindow):
             self.ui.rdoutMousePixels.setText("(-,-,-)")
             self.ui.rdoutMouseWorld.setText("(-,-,-)")
         else:
+        	# Subtracting the X and Y distance corresponding to image origin frame to find cursor location with reference to imae frame
             x = x - MIN_X
             y = y - MIN_Y
+
+            # Checking if the Kinect depth camera is producing output
             if(self.kinect.currentDepthFrame.any() != 0):
                 z = self.kinect.currentDepthFrame[y][x]
+                # Display the x,y (pixels), z (10 bit number) coordinates
                 self.ui.rdoutMousePixels.setText("(%.0f,%.0f,%.0f)" % (x,y,z))
-                if self.sm.calibration_state()==True:
-                    pix_center=self.sm.pixel_center_loc()
 
+                # Checking if the calibration has been done
+                if self.sm.calibration_state()==True:
+
+                	#############################################
+                 	# 		CAMERA FRAME TO DEPTH FRAME         #
+                 	#############################################
+
+                    # Taking in the pixel values in camera frame and transforming to the kinect depth frame
                     pixel_value=np.array([x,y])
                     rgb_pt = np.array([[pixel_value[0],pixel_value[1],1]])
+                    # Extracting the affine matrix computed during camera calibration
                     affine_rgb2depth=self.sm.return_rgb2depth()
+                    # Depth value in 10 bits at corresponding x,y location
                     depth_value=np.matmul(affine_rgb2depth,rgb_pt.T)
-                    
-                    # X and Y locations in the RGB space in pixels
-                    x=x-pix_center.item(0)
-                    y=pix_center.item(1)-y
-                    # Preparing pixel matrix for transform
-                    pixel_value=np.array([x,y])
-                    pixel_value=np.transpose(pixel_value)
-
-                    
-                    affine=self.sm.return_affine()
-                    affine=affine[0:2,0:2]
-
-                    world_value=np.matmul(affine,pixel_value)
-                    # self.kinect.currentDepthFrame = cv2.warpAffine(self.kinect.currentDepthFrame,affine_rgb2depth)
-                    
-                    
-                    #print(depth_value)
+                    # Converting 10 bit depth to real distance using provided analytical function
                     z = self.kinect.currentDepthFrame[int(depth_value.item(1))][int(depth_value.item(0))]
                     Z = 12.36 * np.tan(float(z)/2842.5 + 1.1863)
-                    ZZ = 95-Z
+                    # 95 cm marks the z location of the base plane wrt to the camera. Subtracting 95 to measure +z from the base plane
+                    Z_modified = 95-Z
+
+                 	#############################################
+                 	# 		CAMERA FRAME TO WORLD FRAME         #
+                 	#############################################
+
+                    # Extracting the origin of the camera frame (Following 4 quadrant system)
+                    pix_center=self.sm.pixel_center_loc()
+                    # X and Y locations in the RGB space in pixels with (0,0) at the robot base center
+                    x=x-pix_center.item(0)
+                    y=pix_center.item(1)-y
+                    # Taking in the pixel values in camera frame and transforming to the world frame
+                    pixel_value=np.array([x,y])
+                    pixel_value=np.transpose(pixel_value)
+					# Extracting the affine matrix computed during camera calibration
+                    affine=self.sm.return_affine()
+                    affine=affine[0:2,0:2]
+                    # World x,y location corresponding to iamge frame x,y location
+                    world_value=np.matmul(affine,pixel_value)
+                    
+                    
+                 	#############################################
+                 	# 				SOLVE PNP					#
+                 	#############################################
 
                     # rot,trans = self.sm.return_solvepnp()
                     # cam = self.sm.return_intrinsic()
@@ -339,8 +359,12 @@ class Gui(QMainWindow):
                     # -0.197*float(z) + 142.772
                     # self.kinect.detectBlocksInDepthImage()
                     # self.kinect.processVideoFrame() 
-                    self.ui.rdoutMouseWorld.setText("(%.0f,%.0f,%.1f)" % (world_value.item(0),world_value.item(1),ZZ))
-                    self.sm.WC = [world_value.item(0)*10,world_value.item(1)*10,ZZ*10]
+
+
+                    # Displaying the World X,Y and Z coordinates in GUI
+                    self.ui.rdoutMouseWorld.setText("(%.0f,%.0f,%.1f)" % (world_value.item(0),world_value.item(1),Z_modified))
+
+                    # self.sm.WC = [world_value.item(0)*10,world_value.item(1)*10,ZZ*10]
                 else:
                     self.ui.rdoutMouseWorld.setText("(-,-,-)")
 
@@ -348,7 +372,6 @@ class Gui(QMainWindow):
         """ 
         Function used to record mouse click positions for calibration 
         """
- 
         """ Get mouse posiiton """
         x = QMouseEvent.x()
         y = QMouseEvent.y()
