@@ -118,6 +118,8 @@ def IK(pose):
 
     # extended distance
     d=sqrt(x**2+y**2)
+    print('d',d)
+    print('l23',l2+l3)
     if d<=l2+l3:
         # Base angle
         base_theta = atan2(y,x)

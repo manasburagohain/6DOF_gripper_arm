@@ -26,6 +26,7 @@ class Kinect():
 
         """ block info """
         self.block_contours = np.array([])
+        self.block_coordinates=np.array([])
 
     def captureVideoFrame(self):
         """                      
@@ -110,7 +111,6 @@ class Kinect():
         """
         pts1 = coord1[0:3].astype(np.float32)
         pts2 = coord2[0:3].astype(np.float32)
-        print(cv2.getAffineTransform(pts1,pts2))
         self.depth2rgb_affine = cv2.getAffineTransform(pts1,pts2)
         # print("calcAffine")
         return self.depth2rgb_affine
@@ -140,7 +140,35 @@ class Kinect():
         """
 
         # Taking the RGB camera as input
-        pass
+        img = self.currentVideoFrame
+
+        # Converting the Camera frame from RGB to HSV
+        bgr_frame = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        hsv = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2HSV)
+
+        # Definining the HSV Values
+        color_order=['yellow','orange','pink','black','blue','green','purple','red']
+        color_lower_array=np.array([[0,0,0],[0,100,170],[165,90,210],[0,20,20],[20,110,20],[40,5,88],[140,70,80],[169,120,120]])
+        color_higher_array=np.array([[200,255,255],[40,255,210],[173,215,255],[180,110,80],[110,130,80],[80,150,200],[160,150,210],[180,255,210]])
+
+        # Extracting the H,S and V values at the center of the block in the RGB frame
+        # Creating list to store the detected colors
+        color=[]
+
+        for i in range(self.block_coordinates.size):
+            h = hsv[self.block_coordinates[i+1]][self.block_coordinates[i]][0]
+            s = hsv[self.block_coordinates[i+1]][self.block_coordinates[i]][1]
+            v = hsv[self.block_coordinates[i+1]][self.block_coordinates[i]][2]
+            rgb_hsv_values=np.array([])
+            rgb_hsv_values=np.array([[h,s,v]])
+
+            if (rgb_hsv_values[0]>=color_lower_array[i][0] and rgb_hsv_values[0]<=color_higher_array[i][0]) and (rgb_hsv_values[1]>=color_lower_array[i][1] and rgb_hsv_values[1]<=color_higher_array[i][1]) and (rgb_hsv_values[2]>=color_lower_array[i][2] and rgb_hsv_values[2]<=color_higher_array[i][2]):
+                color.append(color_order[i])
+
+            # cv2.setMouseCallback("window",mouse_callback)
+
+        print (color)
+        return
 
     def detectBlocksInDepthImage(self):
         """
@@ -164,14 +192,13 @@ class Kinect():
         stack_thresh_higher_array=np.array([[177],[175],[170],[165],[160]])
 
         # Defining np array for storing block coordinates
-        block_coordinates=np.array([])
+        self.block_coordinates=([])
         # For each threshold in stack performing the below operations (This is used to detect block stacks up to 5)
         count = 0
         countin = 0
         for i in range(len(stack_thresh_lower_array)):
             # Thresholding the image
             mask = cv2.inRange(depth_frame, stack_thresh_lower_array[i], stack_thresh_higher_array[i])
-            print(i)
             # Performing Morphological Operations on image
             opening = cv2.morphologyEx(mask, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT,(3,3)))
             closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT,(3,3)))
@@ -197,7 +224,6 @@ class Kinect():
             # Drawing a bounding rectangle for the detected box
             for contour in block_contours:
                 count += 1
-                print(contour)
                 rect = cv2.minAreaRect(contour)
                 box = cv2.boxPoints(rect)
                 box = np.int0(box)
@@ -239,6 +265,8 @@ class Kinect():
             # # Marking the COMon the image
             # img[cy-2:cy+2,cx-2:cx+2]=[0,0,255]
         self.block_contours = block_contours
+        self.block_coordinates = block_coordinates
+        print(block_coordinates)
         cv2.imwrite('test.jpg',depth_frame)
         # cv2.namedWindow("window",cv2.WINDOW_AUTOSIZE)
         # cv2.namedWindow("mask",cv2.WINDOW_AUTOSIZE)
@@ -258,41 +286,6 @@ class Kinect():
 
         # RGB Camera portion of the image
 
-        # img = freenect.sync_get_video()[0]
-
-        # # Converting the Camera frame from RGB to HSV
-        # bgr_frame = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        # hsv = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2HSV)
-
-        # # Definining the HSV Values
-        # color_order=['yellow','orange','pink','black','blue','green','purple','red']
-        # color_lower_array=np.array([[0,0,0],[0,100,170],[165,90,210],[0,20,20],[20,110,20],[40,5,88],[140,70,80],[169,120,120]])
-        # color_higher_array=np.array([[200,255,255],[40,255,210],[173,215,255],[180,110,80],[110,130,80],[80,150,200],[160,150,210],[180,255,210]])
-
-        # # Extracting the RGB to Depth Affine Matrix
-        # affine_rgb2depth=self.sm.return_rgb2depth()
-       
-        # # Converting each x,y box location in depth frame to x,y in RGB frame
-        # for i in range (block_coordinates):
-        #     block_coordinates[i]=np.matmul(affine_rgb2depth,block_coordinates[i])
-       
-        # # Extracting the H,S and V values at the center of the block in the RGB frame
-        # # Creating list to store the detected colors
-        # color=[]
-
-        # for i in range(block_coordinates.size):
-        #     h = hsv[block_coordinates[i+1]][block_coordinates[i]][0]
-        #     s = hsv[block_coordinates[i+1]][block_coordinates[i]][1]
-        #     v = hsv[block_coordinates[i+1]][block_coordinates[i]][2]
-        #     rgb_hsv_values=np.array([])
-        #     rgb_hsv_values=np.array([[h,s,v]])
-
-        #     if (rgb_hsv_values[0]>=color_lower_array[i][0] and rgb_hsv_values[0]<=color_higher_array[i][0]) and (rgb_hsv_values[1]>=color_lower_array[i][1] and rgb_hsv_values[1]<=color_higher_array[i][1]) and (rgb_hsv_values[2]>=color_lower_array[i][2] and rgb_hsv_values[2]<=color_higher_array[i][2]):
-        #         color.append(color_order[i])
-
-        #     # cv2.setMouseCallback("window",mouse_callback)
-
-        # print (color)
 
         # pass
         return

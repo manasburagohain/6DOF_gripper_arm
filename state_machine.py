@@ -325,13 +325,8 @@ class StateMachine():
 
             # Taking in the pixel values in camera frame and transforming to the kinect depth frame
             pixel_value=np.array([x,y])
-            rgb_pt = np.array([[pixel_value[0],pixel_value[1],1]])
-            # Extracting the affine matrix computed during camera calibration
-            affine_rgb2depth=self.return_rgb2depth()
-            # Depth value in 10 bits at corresponding x,y location
-            depth_value=np.matmul(affine_rgb2depth,rgb_pt.T)
             # Converting 10 bit depth to real distance using provided analytical function
-            z = self.kinect.currentDepthFrame[int(depth_value.item(1))][int(depth_value.item(0))]
+            z = self.kinect.currentDepthFrame[int(pixel_value.item(1))][int(pixel_value.item(0))]
             Z = 12.36 * np.tan(float(z)/2842.5 + 1.1863)
             # 95 cm marks the z location of the base plane wrt to the camera. Subtracting 95 to measure +z from the base plane
             Z = 95-Z
@@ -367,6 +362,7 @@ class StateMachine():
             # Trajectory Planning to Pick the block
             if execute_states is not None:
                 self.rexarm.toggle_gripper() # open
+                
                 for i, wp in enumerate(execute_states):
                     if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
                         pass
@@ -379,8 +375,9 @@ class StateMachine():
                         plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
                         self.tp.execute_plan(plan_pts, plan_velos)
                         self.rexarm.pause(1)
-
+                
                 # Calling the Inverse Kinematics function to determine the required joint angles for Pose 2 
+                
                 down_states = kine.IK(pose2)
                 if down_states is not None:
                     for i, wp in enumerate(down_states):
@@ -391,7 +388,7 @@ class StateMachine():
                             print(type(wp))
                             initial_wp = self.tp.set_initial_wp()
                             final_wp = self.tp.set_final_wp(wp)
-                            T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 1)
+                            T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 0.2)
                             plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
                             self.tp.execute_plan(plan_pts, plan_velos)
                             self.rexarm.pause(1)
@@ -497,7 +494,7 @@ class StateMachine():
         self.status_message = "Detecting Blocks"
         self.current_state = "block_detect"
         self.kinect.detectBlocksInDepthImage()
-        print("we back son")
+        # self.kinect.blockDetector()
         self.next_state = "idle"
 
     def FK_check(self):
