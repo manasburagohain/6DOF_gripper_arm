@@ -29,7 +29,8 @@ class Rexarm():
                             [-122+90, 122+90],
                             [-115, 104],
                             [-150, 150],
-                            [-128, 129],], dtype=np.float)*D2R
+                            [-128, 129],
+                            [-180, 180]], dtype=np.float)*D2R
 
         """ Commanded Values """
         self.num_joints = len(joints)

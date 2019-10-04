@@ -103,13 +103,14 @@ class Gui(QMainWindow):
         self.dxlbus = DXL_BUS(DEVICENAME, BAUDRATE)
         print(self.dxlbus)
         port_num = self.dxlbus.port()
+        print(port_num)
         base = DXL_MX(port_num, 1)
         shld = DXL_MX(port_num, 2)
         elbw = DXL_MX(port_num, 3)
         wrst = DXL_AX(port_num, 4)
         wrst2 = DXL_AX(port_num, 5)
-        wrst3 = DXL_XL(port_num, 6)
-        grip = DXL_XL(port_num, 7)
+        grip = DXL_XL(port_num, 6)
+        wrst3 = DXL_XL(port_num, 7)
 
         """Objects Using Other Classes"""
         self.kinect = Kinect()
