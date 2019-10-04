@@ -163,15 +163,17 @@ class Kinect():
             rgb_hsv_values=np.array([h,s,v])
 
             for j in range(len(color_order)):
-                print (rgb_hsv_values[0]>=color_lower_array[int(j)][0])
-                print (rgb_hsv_values[0]<=color_higher_array[int(j)][0])
-                print (rgb_hsv_values[1]>=color_lower_array[int(j)][1])
-                print (rgb_hsv_values[1]<=color_higher_array[int(j)][1])
-                print (rgb_hsv_values[2]>=color_lower_array[int(j)][2])
-                print (rgb_hsv_values[2]<=color_higher_array[int(j)][2])
+                # print (rgb_hsv_values[0]>=color_lower_array[int(j)][0])
+                # print (rgb_hsv_values[0]<=color_higher_array[int(j)][0])
+                # print (rgb_hsv_values[1]>=color_lower_array[int(j)][1])
+                # print (rgb_hsv_values[1]<=color_higher_array[int(j)][1])
+                # print (rgb_hsv_values[2]>=color_lower_array[int(j)][2])
+                # print (rgb_hsv_values[2]<=color_higher_array[int(j)][2])
 
-                # if (rgb_hsv_values[0]>=color_lower_array[j][0] and rgb_hsv_values[0]<=color_higher_array[j][0]) and (rgb_hsv_values[1]>=color_lower_array[j][1] and rgb_hsv_values[1]<=color_higher_array[j][1]) and (rgb_hsv_values[2]>=color_lower_array[j][2] and rgb_hsv_values[2]<=color_higher_array[j][2]):
-                #     color.append(color_order[j])
+                if (rgb_hsv_values[0]>=color_lower_array[j][0] and rgb_hsv_values[0]<=color_higher_array[j][0]) and (rgb_hsv_values[1]>=color_lower_array[j][1] and rgb_hsv_values[1]<=color_higher_array[j][1]) and (rgb_hsv_values[2]>=color_lower_array[j][2] and rgb_hsv_values[2]<=color_higher_array[j][2]):
+                    color.append(color_order[j])
+            print (color)
+        
             i+=2
             # cv2.setMouseCallback("window",mouse_callback)
 
@@ -201,6 +203,7 @@ class Kinect():
 
         # Defining np array for storing block coordinates
         self.block_coordinates=([])
+        block_coordinates=np.array([])
         # For each threshold in stack performing the below operations (This is used to detect block stacks up to 5)
         count = 0
         countin = 0
@@ -242,7 +245,7 @@ class Kinect():
             # Marking the center of the box
                 depth_frame[int(center[1])-2:int(center[1])+2,int(center[0])-2:int(center[0])+2]=[0]
 
-                block_coordinates=np.array([])
+                
             # Storing the center coordinates in np array
            
                 block_coordinates=np.append(block_coordinates,[center[0],center[1]])
