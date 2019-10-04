@@ -494,7 +494,7 @@ class StateMachine():
         self.status_message = "Detecting Blocks"
         self.current_state = "block_detect"
         self.kinect.detectBlocksInDepthImage()
-        # self.kinect.blockDetector()
+        self.kinect.blockDetector()
         self.next_state = "idle"
 
     def FK_check(self):
