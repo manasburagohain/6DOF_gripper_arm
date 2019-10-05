@@ -131,7 +131,10 @@ class Gui(QMainWindow):
         self.ui.btn_task5.clicked.connect(self.FK_check)
         self.ui.btnUser1.setText("Calibrate")
         self.ui.btnUser1.clicked.connect(partial(self.sm.set_next_state, "calibrate"))
+        self.ui.btnUser2.setText("Block Detection")
         self.ui.btnUser2.clicked.connect(self.block_detect)
+        self.ui.btnUser3.setText("Task 1")
+        self.ui.btnUser3.clicked.connect(self.task_1)
         self.ui.sldrBase.valueChanged.connect(self.sliderChange)
         self.ui.sldrShoulder.valueChanged.connect(self.sliderChange)
         self.ui.sldrElbow.valueChanged.connect(self.sliderChange)
@@ -239,6 +242,9 @@ class Gui(QMainWindow):
 
     def block_detect(self):
         self.sm.set_next_state("block_detect")
+
+    def task_1(self): 
+        self.sm.set_next_state("Task 1")
 
     def record(self):
         if self.sm.current_state == "operation" :
