@@ -148,19 +148,25 @@ class Kinect():
 
         # Definining the HSV Values
         color_order=['yellow','orange','pink','black','blue','green','purple','red']
-        color_lower_array=np.array([[0,0,0],[0,100,170],[165,90,210],[0,20,20],[20,110,20],[40,5,88],[140,70,80],[169,120,120]])
-        color_higher_array=np.array([[200,255,255],[40,255,210],[173,215,255],[180,110,80],[110,130,80],[80,150,200],[160,150,210],[180,255,210]])
+        color_lower_array=np.array([[50,0,225],[108,140,235],[120,125,240],[0,20,20],[0,110,210],[40,5,136],[150,110,150],[120,135,170]])
+        color_higher_array=np.array([[95,87,255],[122,255,255],[135,183,255],[180,110,80],[10,138,230],[90,60,200],[165,120,170],[140,190,230]])
 
         # Extracting the H,S and V values at the center of the block in the RGB frame
         # Creating list to store the detected colors
         color=[]
+        count=0
 
-        for i in range(self.block_coordinates.size):
-            h = hsv[int(self.block_coordinates[i+1])][int(self.block_coordinates[i])][0]
-            s = hsv[int(self.block_coordinates[i+1])][int(self.block_coordinates[i])][1]
-            v = hsv[int(self.block_coordinates[i+1])][int(self.block_coordinates[i])][2]
+        print(self.block_coordinates.size)
+
+        for i in range(self.block_coordinates.size - 2):
+            h = hsv[int(self.block_coordinates[i+count+1])][int(self.block_coordinates[i+count])][0]
+            s = hsv[int(self.block_coordinates[i+count+1])][int(self.block_coordinates[i+count])][1]
+            v = hsv[int(self.block_coordinates[i+count+1])][int(self.block_coordinates[i+count])][2]
             rgb_hsv_values=np.array([])
             rgb_hsv_values=np.array([h,s,v])
+            count=count+1
+            if(self.block_coordinates.size==count*2):
+                break
 
             for j in range(len(color_order)):
                 # print (rgb_hsv_values[0]>=color_lower_array[int(j)][0])
@@ -172,9 +178,9 @@ class Kinect():
 
                 if (rgb_hsv_values[0]>=color_lower_array[j][0] and rgb_hsv_values[0]<=color_higher_array[j][0]) and (rgb_hsv_values[1]>=color_lower_array[j][1] and rgb_hsv_values[1]<=color_higher_array[j][1]) and (rgb_hsv_values[2]>=color_lower_array[j][2] and rgb_hsv_values[2]<=color_higher_array[j][2]):
                     color.append(color_order[j])
-            print (color)
+            # print (color)
         
-            i+=2
+            i
             # cv2.setMouseCallback("window",mouse_callback)
 
         print (color)
@@ -204,6 +210,7 @@ class Kinect():
         # Defining np array for storing block coordinates
         self.block_coordinates=([])
         block_coordinates=np.array([])
+        int_block_contours = []
         # For each threshold in stack performing the below operations (This is used to detect block stacks up to 5)
         count = 0
         countin = 0
@@ -220,14 +227,14 @@ class Kinect():
             # Find the largest contour and ensuring area is within a defined limit
             contour_sizes = [(cv2.contourArea(contour), contour) for contour in contours if (cv2.contourArea(contour)>400 and cv2.contourArea(contour)<900)]
             # biggest_contour = max(contour_sizes, key=lambda x: x[0])[1]
-            if i == 0:
-                block_contours = []
+            block_contours = []
+            block_coordinates=np.array([])
             # print(contours)
             for contour in contours:
                 if (cv2.contourArea(contour)>400 and cv2.contourArea(contour)<900):
                     countin +=1
                     block_contours.append(contour)
-            # print(block_contours)
+            print(len(block_contours))
             # Drawing the largest contour
 
             # cv2.drawContours(depth_frame, biggest_contour, -1, (255,255,0), 3)
@@ -249,7 +256,8 @@ class Kinect():
             # Storing the center coordinates in np array
            
                 block_coordinates=np.append(block_coordinates,[center[0],center[1]])
-
+                int_block_contours += block_contours
+                self.block_coordinates = np.append(self.block_coordinates,block_coordinates)
             # Print Block Height
             # z = kinect.currentDepthFrame[int(center[1])][int(center[0])]
             # print("Block height is",z)
@@ -275,9 +283,9 @@ class Kinect():
 
             # # Marking the COMon the image
             # img[cy-2:cy+2,cx-2:cx+2]=[0,0,255]
-        self.block_contours = block_contours
-        self.block_coordinates = block_coordinates
-        print(block_coordinates)
+        self.block_contours = int_block_contours
+        
+        # print(block_coordinates)
         cv2.imwrite('test.jpg',depth_frame)
         # cv2.namedWindow("window",cv2.WINDOW_AUTOSIZE)
         # cv2.namedWindow("mask",cv2.WINDOW_AUTOSIZE)
