@@ -75,7 +75,7 @@ class StateMachine():
             if(self.next_state == "Task 1"):
                 self.task1()
             if(self.next_state == "Task 2"):
-                self.task1()
+                self.task2()
         
         if(self.current_state == "operation"):
             if(self.next_state == "idle"):
@@ -694,8 +694,8 @@ class StateMachine():
             if execute_states is None:
                 print ("Cannot go to pose above the block location for picking")
             else:
-                print ("Goint to step 1 to pick item at pose",execute_states)
-                print("Z to pick up item 3 cm above is",Z+3)
+                # print ("Goint to step 1 to pick item at pose",execute_states)
+                # print("Z to pick up item 3 cm above is",Z+3)
                 self.rexarm.toggle_gripper() # open
                 execute_fast_movement(execute_states)
                 
@@ -705,8 +705,8 @@ class StateMachine():
                 if down_states is None:
                     print("Cannot go to pose to drop the block")
                 else:
-                    print ("Goint to step 2 to pick item at pose",down_states)
-                    print("Z to pick up item above is",Z)
+                    # print ("Goint to step 2 to pick item at pose",down_states)
+                    # print("Z to pick up item above is",Z)
                     execute_slow_movement(down_states)
                     self.rexarm.toggle_gripper() #close
 
@@ -724,23 +724,24 @@ class StateMachine():
                     z_drop=find_z_at_xy(x_drop,y_drop)
 
                     world_value=pixel_to_world_coords(x_drop,y_drop)
+                    print("World coordinates of block dropped is",world_value)
 
                     # Constructing the pose for pose 
 
                     pose_drop_intermediate=[world_value.item(0)*10,world_value.item(1)*10,(z_drop+7)*10]
                     down_states_intermediate = kine.IK(pose_drop_intermediate)
-                    down_states_intermediate[5]=np.arctan2(world_value.item(1),world_value.item(0))
+                    down_states_intermediate[0][5]=np.arctan2(world_value.item(1),world_value.item(0))
 
                     if down_states_intermediate is None:
                         print ("Cannot go to pose above the block location for dropping")
                     else:
-                        print ("Goint to step 3 to drop item at pose",down_states_intermediate)
-                        print ("Z to drop up item 3 cm above is",z_drop+7)
+                        # print ("Goint to step 3 to drop item at pose",down_states_intermediate)
+                        # print ("Z to drop up item 3 cm above is",z_drop+7)
                         execute_fast_movement(down_states_intermediate)
 
                         pose_drop=[world_value.item(0)*10,world_value.item(1)*10,(z_drop+3)*10]
                         down_states = kine.IK(pose_drop)
-                        down_states[5]=np.arctan2(world_value.item(1),world_value.item(0))
+                        down_states[0][5]=np.arctan2(world_value.item(1),world_value.item(0))
                         if down_states is None:
                             print("Cannot go to pose to drop the block (block picked up")
                         else:
@@ -751,7 +752,7 @@ class StateMachine():
 
                             pose_interm_up=[world_value.item(0)*10,world_value.item(1)*10,(z_drop+7)*10]
                             intermediate_up_states = kine.IK(pose_interm_up)
-                            intermediate_up_states[5]=np.arctan2(world_value.item(1),world_value.item(0))
+                            intermediate_up_states[0][5]=np.arctan2(world_value.item(1),world_value.item(0))
                             if intermediate_up_states is None:
                                 print("Cannot go to pose to drop the block (block picked up")
                             else:
@@ -883,9 +884,11 @@ class StateMachine():
 
         for i in range(len(self.kinect.block_coordinates)-2):
             block_coordinates=np.array([[self.kinect.block_coordinates[i+count]],[self.kinect.block_coordinates[i+count+1]]])
+            print("Drop coordinates for block No. ", i)
+            print("Drop coordinates for block are ", block_coordinates)
             self.click_and_grab_task2(block_coordinates, drop_coordinates)
             drop_coordinates=np.array([[350+distance],[360]])
-            distance=distance+30
+            distance=distance+200
             count=count+1
 
         self.next_state = "idle"

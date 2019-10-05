@@ -20,9 +20,9 @@ def mouse_callback(event,x,y,flags,param):
 
     tmp = img.copy()
     print('3')
-    cv2.putText(tmp,output_rgb, (10,20), font, 0.5, (0,0,0))
-    cv2.putText(tmp,output_hsv, (10,40), font, 0.5, (0,0,0))
-    cv2.putText(tmp,location, (10,60), font, 0.5, (0,0,0))
+    cv2.putText(tmp,output_rgb, (10,20), font, 0.5, (255,255,255))
+    cv2.putText(tmp,output_hsv, (10,40), font, 0.5, (255,255,255))
+    cv2.putText(tmp,location, (10,60), font, 0.5, (255,255,255))
     print('4')
     cv2.imshow('window', tmp)
     print('5')
@@ -31,10 +31,10 @@ def mouse_callback(event,x,y,flags,param):
 
 img = freenect.sync_get_video()[0]
 hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
-print('1')
-cv2.namedWindow("window",1)
-cv2.imshow('window', img)
+cv2.namedWindow("window",2)
+# cv2.imwrite('blah.jpg',hsv)
+# cv2.imshow("blah",img)
+print(img[0][0][2])
 cv2.setMouseCallback("window",mouse_callback)
 
 while True:

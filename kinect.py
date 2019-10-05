@@ -148,8 +148,8 @@ class Kinect():
 
         # Definining the HSV Values
         color_order=['yellow','orange','pink','black','blue','green','purple','red']
-        color_lower_array=np.array([[45,0,225],[103,90,210],[115,125,240],[0,20,20],[0,95,180],[35,5,125],[145,40,140],[115,130,160]])
-        color_higher_array=np.array([[100,87,255],[127,255,255],[140,183,255],[185,110,80],[15,145,230],[95,110,210],[170,100,170],[145,190,230]])
+        color_lower_array=np.array([[0,0,225],[103,90,210],[115,125,240],[0,20,20],[0,95,180],[35,5,125],[145,40,140],[115,130,160]])
+        color_higher_array=np.array([[100,120,255],[127,255,255],[140,183,255],[185,110,80],[15,145,230],[95,110,210],[170,100,170],[145,190,230]])
 
         # Extracting the H,S and V values at the center of the block in the RGB frame
         # Creating list to store the detected colors
