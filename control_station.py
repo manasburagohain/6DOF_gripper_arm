@@ -135,6 +135,8 @@ class Gui(QMainWindow):
         self.ui.btnUser2.clicked.connect(self.block_detect)
         self.ui.btnUser3.setText("Task 1")
         self.ui.btnUser3.clicked.connect(self.task_1)
+        self.ui.btnUser4.setText("Task 2")
+        self.ui.btnUser4.clicked.connect(self.task_2)
         self.ui.sldrBase.valueChanged.connect(self.sliderChange)
         self.ui.sldrShoulder.valueChanged.connect(self.sliderChange)
         self.ui.sldrElbow.valueChanged.connect(self.sliderChange)
@@ -245,6 +247,9 @@ class Gui(QMainWindow):
 
     def task_1(self): 
         self.sm.set_next_state("Task 1")
+
+    def task_2(self): 
+        self.sm.set_next_state("Task 2")
 
     def record(self):
         if self.sm.current_state == "operation" :

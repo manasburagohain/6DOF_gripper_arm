@@ -74,6 +74,8 @@ class StateMachine():
                 self.block_detect()  
             if(self.next_state == "Task 1"):
                 self.task1()
+            if(self.next_state == "Task 2"):
+                self.task1()
         
         if(self.current_state == "operation"):
             if(self.next_state == "idle"):
@@ -88,6 +90,8 @@ class StateMachine():
         if(self.current_state == "opplay"):
             if(self.next_state == "idle"):
                 self.idle()
+            if(self.next_state == "estop"):
+                self.estop()
         
         if(self.current_state == "block_detect"):
             if(self.next_state == "idle"):
@@ -100,14 +104,26 @@ class StateMachine():
         if(self.current_state == "calibrate"):
             if(self.next_state == "idle"):
                 self.idle()
+            if(self.next_state == "estop"):
+                self.estop()
                
         if(self.current_state == "FK_check"):
             if(self.next_state == "idle"):
                 self.idle()
+            if(self.next_state == "estop"):
+                self.estop()
 
         if(self.current_state == "Task 1"):
             if(self.next_state == "idle"):
                 self.idle()
+            if(self.next_state == "estop"):
+                self.estop()
+
+        if(self.current_state == "Task 2"):
+            if(self.next_state == "idle"):
+                self.idle()
+            if(self.next_state == "estop"):
+                self.estop()
     """Functions run for each state"""
 
 
@@ -686,6 +702,26 @@ class StateMachine():
         for i in range(len(self.kinect.block_coordinates)-2):
             block_coordinates=np.array([[self.kinect.block_coordinates[i+count]],[self.kinect.block_coordinates[i+count+1]]])
             self.click_and_grab_task1(block_coordinates, drop_coordinates)
+            count=count+1
+
+        self.next_state = "idle"
+
+
+    def task1(self):
+        self.status_message = "Performing task 2"
+        self.current_state = "Task 2"
+        # Calling the block detection function to detect block contours
+        self.block_detect()
+        # Denoting the location for dropping the block
+        drop_coordinates=np.array([[350],[350]])
+        count=0
+        distance=0
+
+        for i in range(len(self.kinect.block_coordinates)-2):
+            block_coordinates=np.array([[self.kinect.block_coordinates[i+count]],[self.kinect.block_coordinates[i+count+1]]])
+            self.click_and_grab_task1(block_coordinates, drop_coordinates)
+            drop_coordinates=np.array([[350+distance],[350]])
+            distance=distance+50
             count=count+1
 
         self.next_state = "idle"
