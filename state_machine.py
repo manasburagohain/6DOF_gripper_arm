@@ -441,7 +441,7 @@ class StateMachine():
 
 
     def click_and_grab_task1(self, block_coordinates, drop_coordinates):
-        print("Executing Task")
+        print("Executing Task 1")
         # Waiting for 3 seconds for user to click the block location
         time.sleep(3)
 
@@ -600,6 +600,170 @@ class StateMachine():
                                 execute_fast_movement(idlePos)
                                 self.rexarm.toggle_gripper() # Opening the gripper
                             # self.rexarm.toggle_gripper() # Closing the gripper
+
+    def click_and_grab_task2(self, block_coordinates, drop_coordinates):
+        print("Executing Task 2")
+        # Waiting for 3 seconds for user to click the block location
+        time.sleep(3)
+
+        ####################################################
+        #       CAMERA FRAME TO DEPTH FRAME FUNCTION        #
+        ####################################################
+
+        def find_z_at_xy(x,y):
+            # Taking in the pixel values in camera frame and transforming to the kinect depth frame
+            pixel_value=np.array([x,y])
+            # Converting 10 bit depth to real distance using provided analytical function
+            z = self.kinect.currentDepthFrame[int(pixel_value.item(1))][int(pixel_value.item(0))]
+            Z = 12.36 * np.tan(float(z)/2842.5 + 1.1863)
+            # 95 cm marks the z location of the base plane wrt to the camera. Subtracting 95 to measure +z from the base plane
+            Z = 95-Z
+            return Z
+
+        def pixel_to_world_coords(x,y):
+            #############################################
+            #       CAMERA FRAME TO WORLD FRAME         #
+            #############################################
+            # Extracting the origin of the camera frame (Following 4 quadrant system)
+            pix_center=self.pixel_center_loc()
+            # X and Y locations in the RGB space in pixels with (0,0) at the robot base center
+            x=x-pix_center.item(0)
+            y=pix_center.item(1)-y
+            # Taking in the pixel values in camera frame and transforming to the world frame
+            pixel_value=np.array([x,y])
+            pixel_value=np.transpose(pixel_value)
+            # Extracting the affine matrix computed during camera calibration
+            affine=self.return_affine()
+            affine=affine[0:2,0:2]
+            # print('affine:',affine,'\nxy:',pixel_value)
+            # World x,y location corresponding to iamge frame x,y location
+            world_value=np.matmul(affine,pixel_value.T)
+            return (world_value)
+
+        def execute_fast_movement(pose_togo):
+            for i, wp in enumerate(pose_togo):
+                if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
+                    pass
+                else:
+                    # print(wp)
+                    # print(type(wp))
+                    initial_wp = self.tp.set_initial_wp()
+                    final_wp = self.tp.set_final_wp(wp)
+                    T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 1)
+                    plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
+                    self.tp.execute_plan(plan_pts, plan_velos)
+                    self.rexarm.pause(1)
+
+        def execute_slow_movement(pose_togo):
+            for i, wp in enumerate(pose_togo):
+                if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
+                    pass
+                else:
+                    # print(wp)
+                    # print(type(wp))
+                    initial_wp = self.tp.set_initial_wp()
+                    final_wp = self.tp.set_final_wp(wp)
+                    T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 0.2)
+                    plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
+                    self.tp.execute_plan(plan_pts, plan_velos)
+                    self.rexarm.pause(1)
+
+
+        # Check if the click has been made by the user
+        if(len(block_coordinates) == 2):
+
+            x=block_coordinates[0]
+            y=block_coordinates[1]
+
+            Z=find_z_at_xy(x,y)
+
+            world_value=pixel_to_world_coords(x,y)
+
+            
+            # Generating the pose matrix (Multiplying X,Y,Z by 10 since inputs to IK are in mm)
+            # Pose 1 is position 3 cm above the block location
+            pose1=[world_value.item(0)*10,world_value.item(1)*10,(Z+3)*10]
+            # Pose 2 is position to grab the block
+            pose2=[world_value.item(0)*10,world_value.item(1)*10,Z*10]
+            # print ("X, Y, Z values of the location to pick block is ",pose2)
+            
+            # Calling the Inverse Kinematics function to determine the required joint angles for Pose 1
+            execute_states = kine.IK(pose1)
+
+            # Trajectory Planning to Pick the block and drop it at place
+            if execute_states is None:
+                print ("Cannot go to pose above the block location for picking")
+            else:
+                print ("Goint to step 1 to pick item at pose",execute_states)
+                print("Z to pick up item 3 cm above is",Z+3)
+                self.rexarm.toggle_gripper() # open
+                execute_fast_movement(execute_states)
+                
+                # Calling the Inverse Kinematics function to determine the required joint angles for Pose 2 
+                
+                down_states = kine.IK(pose2)
+                if down_states is None:
+                    print("Cannot go to pose to drop the block")
+                else:
+                    print ("Goint to step 2 to pick item at pose",down_states)
+                    print("Z to pick up item above is",Z)
+                    execute_slow_movement(down_states)
+                    self.rexarm.toggle_gripper() #close
+
+                    ## Once the block has been picked the arm should open up to ensure block is properly gripped. This pose is defined by idlePos
+                    idlePos = [[0.0, 0, 0.0, 0.0, -np.pi/4,0]]
+                    execute_fast_movement(idlePos)
+                    self.rexarm.toggle_gripper() # Opening the gripper
+                    self.rexarm.toggle_gripper() # Closing the gripper
+
+                    # Dropping the block as per Block Drop Coordinates
+                    
+                    x_drop=drop_coordinates[0][0]  # These are in world reference frame
+                    y_drop=drop_coordinates[1][0]  # Hence no conversion to word coordinate frame as before
+
+                    z_drop=find_z_at_xy(x_drop,y_drop)
+
+                    world_value=pixel_to_world_coords(x_drop,y_drop)
+
+                    # Constructing the pose for pose 
+
+                    pose_drop_intermediate=[world_value.item(0)*10,world_value.item(1)*10,(z_drop+7)*10]
+                    down_states_intermediate = kine.IK(pose_drop_intermediate)
+                    down_states_intermediate[5]=np.arctan2(world_value.item(1),world_value.item(0))
+
+                    if down_states_intermediate is None:
+                        print ("Cannot go to pose above the block location for dropping")
+                    else:
+                        print ("Goint to step 3 to drop item at pose",down_states_intermediate)
+                        print ("Z to drop up item 3 cm above is",z_drop+7)
+                        execute_fast_movement(down_states_intermediate)
+
+                        pose_drop=[world_value.item(0)*10,world_value.item(1)*10,(z_drop+3)*10]
+                        down_states = kine.IK(pose_drop)
+                        down_states[5]=np.arctan2(world_value.item(1),world_value.item(0))
+                        if down_states is None:
+                            print("Cannot go to pose to drop the block (block picked up")
+                        else:
+                            print ("Goint to step 4 to drop item at pose",down_states)
+                            print ("Z to drop up item 1 cm above is",z_drop+3)
+                            execute_slow_movement(down_states)
+                            self.rexarm.toggle_gripper() # Opening the gripper
+
+                            pose_interm_up=[world_value.item(0)*10,world_value.item(1)*10,(z_drop+7)*10]
+                            intermediate_up_states = kine.IK(pose_interm_up)
+                            intermediate_up_states[5]=np.arctan2(world_value.item(1),world_value.item(0))
+                            if intermediate_up_states is None:
+                                print("Cannot go to pose to drop the block (block picked up")
+                            else:
+                                print ("Goint to step 5 to interm up at pose",intermediate_up_states)
+                                execute_slow_movement(intermediate_up_states)
+                                # self.rexarm.toggle_gripper() # Opening the gripper
+
+
+                                idlePos = [[0.0, 0, 0.0, 0.0, -np.pi/4,0]]
+                                execute_fast_movement(idlePos)
+                                self.rexarm.toggle_gripper() # Opening the gripper
+                            # self.rexarm.toggle_gripper() # Closing the gripper
                     
 
     def execute(self):
@@ -719,9 +883,9 @@ class StateMachine():
 
         for i in range(len(self.kinect.block_coordinates)-2):
             block_coordinates=np.array([[self.kinect.block_coordinates[i+count]],[self.kinect.block_coordinates[i+count+1]]])
-            self.click_and_grab_task1(block_coordinates, drop_coordinates)
-            drop_coordinates=np.array([[320],[340+distance]])
-            distance=distance+50
+            self.click_and_grab_task2(block_coordinates, drop_coordinates)
+            drop_coordinates=np.array([[350+distance],[360]])
+            distance=distance+30
             count=count+1
 
         self.next_state = "idle"
