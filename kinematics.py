@@ -110,16 +110,17 @@ def IK(pose):
     l1=118
     l2=99
     l3=112
-    l4=85.5
+    l4=128
 
     x=pose[0]
     y=pose[1]
     z=pose[2]
 
     # extended distance
+
     d=sqrt(x**2+y**2)
-    print('d',d)
-    print('l23',l2+l3)
+    # print('d',d)
+    # print('l23',l2+l3)
     if d<=l2+l3:
         # Base angle
         base_theta = atan2(y,x)
@@ -141,10 +142,10 @@ def IK(pose):
         w2_theta = np.pi-(elbow_theta-phi1+np.pi/2-phi2)
         #print(w2_theta/np.pi*180)
 
-        print(base_theta,shoulder_theta-np.pi/2,elbow_theta,0,w2_theta)
+        # print(base_theta,shoulder_theta-np.pi/2,elbow_theta,0,w2_theta)
         print("Angle in degrees",base_theta*180/np.pi, shoulder_theta*180/np.pi, elbow_theta*180/np.pi,w2_theta*180/np.pi)
 
-        return [[base_theta,shoulder_theta-np.pi/2,elbow_theta,0,w2_theta]]
+        return [[base_theta,shoulder_theta-np.pi/2,elbow_theta,0,w2_theta,0]]
         pass
 
     else:

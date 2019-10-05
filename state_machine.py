@@ -374,7 +374,7 @@ class StateMachine():
                         pass
                     else:
                         print(wp)
-                        print(type(wp))
+                        # print(type(wp))
                         initial_wp = self.tp.set_initial_wp()
                         final_wp = self.tp.set_final_wp(wp)
                         T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 1)
@@ -401,7 +401,7 @@ class StateMachine():
                     self.rexarm.toggle_gripper() #close
 
                     ## Once the block has been picked the arm should open up to ensure block is properly gripped. This pose is defined by idlePos
-                    idlePos = [[0.0, 0, 0.0, 0.0, -np.pi/4]]
+                    idlePos = [[0.0, 0, 0.0, 0.0, -np.pi/4,0]]
 
                     for i, wp in enumerate(idlePos):
                         if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
@@ -433,7 +433,7 @@ class StateMachine():
         #       CAMERA FRAME TO DEPTH FRAME FUNCTION        #
         ####################################################
 
-        def find_z_at_xy(x,y,self):
+        def find_z_at_xy(x,y):
             # Taking in the pixel values in camera frame and transforming to the kinect depth frame
             pixel_value=np.array([x,y])
             # Converting 10 bit depth to real distance using provided analytical function
@@ -443,7 +443,7 @@ class StateMachine():
             Z = 95-Z
             return Z
 
-        def pixel_to_world_coords(x,y,self):
+        def pixel_to_world_coords(x,y):
             #############################################
             #       CAMERA FRAME TO WORLD FRAME         #
             #############################################
@@ -458,9 +458,38 @@ class StateMachine():
             # Extracting the affine matrix computed during camera calibration
             affine=self.return_affine()
             affine=affine[0:2,0:2]
+            # print('affine:',affine,'\nxy:',pixel_value)
             # World x,y location corresponding to iamge frame x,y location
-            world_value=np.matmul(affine,pixel_value)
+            world_value=np.matmul(affine,pixel_value.T)
             return (world_value)
+
+        def execute_fast_movement(pose_togo):
+            for i, wp in enumerate(pose_togo):
+                if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
+                    pass
+                else:
+                    # print(wp)
+                    # print(type(wp))
+                    initial_wp = self.tp.set_initial_wp()
+                    final_wp = self.tp.set_final_wp(wp)
+                    T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 1)
+                    plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
+                    self.tp.execute_plan(plan_pts, plan_velos)
+                    self.rexarm.pause(1)
+
+        def execute_slow_movement(pose_togo):
+            for i, wp in enumerate(pose_togo):
+                if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
+                    pass
+                else:
+                    # print(wp)
+                    # print(type(wp))
+                    initial_wp = self.tp.set_initial_wp()
+                    final_wp = self.tp.set_final_wp(wp)
+                    T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 0.2)
+                    plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
+                    self.tp.execute_plan(plan_pts, plan_velos)
+                    self.rexarm.pause(1)
 
 
         # Check if the click has been made by the user
@@ -469,7 +498,7 @@ class StateMachine():
             x=block_coordinates[0]
             y=block_coordinates[1]
 
-            z=find_z_at_xy(x,y)
+            Z=find_z_at_xy(x,y)
 
             world_value=pixel_to_world_coords(x,y)
 
@@ -479,7 +508,7 @@ class StateMachine():
             pose1=[world_value.item(0)*10,world_value.item(1)*10,(Z+3)*10]
             # Pose 2 is position to grab the block
             pose2=[world_value.item(0)*10,world_value.item(1)*10,Z*10]
-            print ("X, Y, Z values of the location to pick block is ",pose2)
+            # print ("X, Y, Z values of the location to pick block is ",pose2)
             
             # Calling the Inverse Kinematics function to determine the required joint angles for Pose 1
             execute_states = kine.IK(pose1)
@@ -488,20 +517,10 @@ class StateMachine():
             if execute_states is None:
                 print ("Cannot go to pose above the block location for picking")
             else:
+                print ("Goint to step 1 to pick item at pose",execute_states)
+                print("Z to pick up item 3 cm above is",Z+3)
                 self.rexarm.toggle_gripper() # open
-                
-                for i, wp in enumerate(execute_states):
-                    if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
-                        pass
-                    else:
-                        print(wp)
-                        print(type(wp))
-                        initial_wp = self.tp.set_initial_wp()
-                        final_wp = self.tp.set_final_wp(wp)
-                        T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 1)
-                        plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
-                        self.tp.execute_plan(plan_pts, plan_velos)
-                        self.rexarm.pause(1)
+                execute_fast_movement(execute_states)
                 
                 # Calling the Inverse Kinematics function to determine the required joint angles for Pose 2 
                 
@@ -509,87 +528,63 @@ class StateMachine():
                 if down_states is None:
                     print("Cannot go to pose to drop the block")
                 else:
-                    for i, wp in enumerate(down_states):
-                        if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
-                            pass
-                        else:
-                            print(wp)
-                            print(type(wp))
-                            initial_wp = self.tp.set_initial_wp()
-                            final_wp = self.tp.set_final_wp(wp)
-                            T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 0.2)
-                            plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
-                            self.tp.execute_plan(plan_pts, plan_velos)
-                            self.rexarm.pause(1)
+                    print ("Goint to step 2 to pick item at pose",down_states)
+                    print("Z to pick up item above is",Z)
+                    execute_slow_movement(down_states)
                     self.rexarm.toggle_gripper() #close
 
                     ## Once the block has been picked the arm should open up to ensure block is properly gripped. This pose is defined by idlePos
-                    idlePos = [[0.0, 0, 0.0, 0.0, -np.pi/4]]
-
-                    for i, wp in enumerate(idlePos):
-                        if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
-                            pass
-                        else:
-                            print(wp)
-                            print(type(wp))
-                            initial_wp = self.tp.set_initial_wp()
-                            final_wp = self.tp.set_final_wp(wp)
-                            T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 1)
-                            plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
-                            self.tp.execute_plan(plan_pts, plan_velos)
-                            self.rexarm.pause(1)
+                    idlePos = [[0.0, 0, 0.0, 0.0, -np.pi/4,0]]
+                    execute_fast_movement(idlePos)
                     self.rexarm.toggle_gripper() # Opening the gripper
                     self.rexarm.toggle_gripper() # Closing the gripper
 
                     # Dropping the block as per Block Drop Coordinates
                     
-                    x_drop=drop_coordinates[0]  # These are in world reference frame
-                    y_drop=drop_coordinates[1]  # Hence no conversion to word coordinate frame as before
-                    
+                    x_drop=drop_coordinates[0][0]  # These are in world reference frame
+                    y_drop=drop_coordinates[1][0]  # Hence no conversion to word coordinate frame as before
+
                     z_drop=find_z_at_xy(x_drop,y_drop)
 
+                    world_value=pixel_to_world_coords(x_drop,y_drop)
+
                     # Constructing the pose for pose 
-                    pose_drop_intermediate=[x_drop*10,y_drop*10,(z_drop+2)*10]
+
+                    pose_drop_intermediate=[world_value.item(0)*10,world_value.item(1)*10,(z_drop+7)*10]
                     down_states_intermediate = kine.IK(pose_drop_intermediate)
 
                     if down_states_intermediate is None:
                         print ("Cannot go to pose above the block location for dropping")
                     else:
-                        for i, wp in enumerate(down_states_intermediate):
-                            if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
-                                pass
-                            else:
-                                print(wp)
-                                print(type(wp))
-                                initial_wp = self.tp.set_initial_wp()
-                                final_wp = self.tp.set_final_wp(wp)
-                                T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 1)
-                                plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
-                                self.tp.execute_plan(plan_pts, plan_velos)
-                                self.rexarm.pause(1)
+                        print ("Goint to step 3 to drop item at pose",down_states_intermediate)
+                        print ("Z to drop up item 3 cm above is",z_drop+7)
+                        execute_fast_movement(down_states_intermediate)
 
-                        pose_drop=[x_drop*10,y_drop*10,(z_drop)*10]
+                        pose_drop=[world_value.item(0)*10,world_value.item(1)*10,(z_drop+3)*10]
                         down_states = kine.IK(pose_drop)
-
                         if down_states is None:
                             print("Cannot go to pose to drop the block (block picked up")
                         else:
-                            for i, wp in enumerate(down_states):
-                                if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
-                                    pass
-                                else:
-                                    print(wp)
-                                    print(type(wp))
-                                    initial_wp = self.tp.set_initial_wp()
-                                    final_wp = self.tp.set_final_wp(wp)
-                                    T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 1)
-                                    plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
-                                    self.tp.execute_plan(plan_pts, plan_velos)
-                                    self.rexarm.pause(1)
+                            print ("Goint to step 4 to drop item at pose",down_states)
+                            print ("Z to drop up item 1 cm above is",z_drop+3)
+                            execute_slow_movement(down_states)
                             self.rexarm.toggle_gripper() # Opening the gripper
-            else:
-                print("Not Reachable, Retry")
 
+                            pose_interm_up=[world_value.item(0)*10,world_value.item(1)*10,(z_drop+7)*10]
+                            intermediate_up_states = kine.IK(pose_interm_up)
+                            if intermediate_up_states is None:
+                                print("Cannot go to pose to drop the block (block picked up")
+                            else:
+                                print ("Goint to step 5 to interm up at pose",intermediate_up_states)
+                                execute_slow_movement(intermediate_up_states)
+                                # self.rexarm.toggle_gripper() # Opening the gripper
+
+
+                                idlePos = [[0.0, 0, 0.0, 0.0, -np.pi/4,0]]
+                                execute_fast_movement(idlePos)
+                                self.rexarm.toggle_gripper() # Opening the gripper
+                            # self.rexarm.toggle_gripper() # Closing the gripper
+                    
 
     def execute(self):
 
@@ -685,11 +680,12 @@ class StateMachine():
         # Calling the block detection function to detect block contours
         self.block_detect()
         # Denoting the location for dropping the block
-        drop_coordinates=np.array([[10],[10]])
+        drop_coordinates=np.array([[350],[350]])
+        count=0
 
-        for i in range(len(self.kinect.block_coordinates)):
+        for i in range(len(self.kinect.block_coordinates)-2):
             block_coordinates=np.array([[self.kinect.block_coordinates[i+count]],[self.kinect.block_coordinates[i+count+1]]])
-            click_and_grab_task1(self, block_coordinates, drop_coordinates)
+            self.click_and_grab_task1(block_coordinates, drop_coordinates)
             count=count+1
 
         self.next_state = "idle"
