@@ -199,10 +199,10 @@ class StateMachine():
         global camMatrix
 
         # Camera Instrinsic Matrix obtained through chequerboard calibration
-        camMatrix = np.array([[562.04399308,0.00,327.78253347],
-                              [0.00,559.59009967,249.41949401],
+        camMatrix = np.array([[542.27975972,0.00,332.75615151],
+                              [0.00,542.4745867,267.91209383],
                                 [0.00,0.00,1.00]])
-        distCoeffs = np.array([2.86261843e-01,-1.06215288e+00,-6.38736068e-04,-6.91259011e-04,1.42539697e+00])
+        distCoeffs = np.array([0.28686841,-0.86649629,0.01330085,0.00217651,0.98118301])
 
         # Recording the edge coordinates of the board locations in the world frame (in mm)
 
@@ -233,7 +233,7 @@ class StateMachine():
                 count=count+1
 
         # B matrix contains the world coordinate points (measured)
-        b=np.array([-29.5, -30.48, -29.5, 30.48,29.5,30.48, 29.5,-30.48])
+        b=np.array([-30.988, -29.718, -30.988, 30.48,29.972,30.48, 29.972,-29.718])
 
         # Solving for Ax=B (Taking pseudo inverse since A is not square)
         x=(np.linalg.inv(A.T.dot(A))).dot(A.T).dot(b.T)
@@ -441,7 +441,7 @@ class StateMachine():
 
 
     def click_and_grab_task1(self, block_coordinates, drop_coordinates):
-        print("Executing Task 1")
+        print("Executing Task")
         # Waiting for 3 seconds for user to click the block location
         time.sleep(3)
 
@@ -707,7 +707,7 @@ class StateMachine():
         self.next_state = "idle"
 
 
-    def task1(self):
+    def task2(self):
         self.status_message = "Performing task 2"
         self.current_state = "Task 2"
         # Calling the block detection function to detect block contours
@@ -720,7 +720,7 @@ class StateMachine():
         for i in range(len(self.kinect.block_coordinates)-2):
             block_coordinates=np.array([[self.kinect.block_coordinates[i+count]],[self.kinect.block_coordinates[i+count+1]]])
             self.click_and_grab_task1(block_coordinates, drop_coordinates)
-            drop_coordinates=np.array([[350+distance],[350]])
+            drop_coordinates=np.array([[320],[340+distance]])
             distance=distance+50
             count=count+1
 
