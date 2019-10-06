@@ -611,6 +611,39 @@ class StateMachine():
         #       CAMERA FRAME TO DEPTH FRAME FUNCTION        #
         ####################################################
 
+        # def find_z_at_xy(x,y):
+        #     # Taking in the pixel values in camera frame and transforming to the kinect depth frame
+        #     pix_center=self.pixel_center_loc()
+        #     x=x+pix_center.item(0)
+        #     y=pix_center.item(1)-y
+        #     pixel_value=np.array([x,y])
+        #     # Converting 10 bit depth to real distance using provided analytical function
+        #     z = self.kinect.currentDepthFrame[int(pixel_value.item(1))][int(pixel_value.item(0))]
+        #     Z = 12.36 * np.tan(float(z)/2842.5 + 1.1863)
+        #     # 95 cm marks the z location of the base plane wrt to the camera. Subtracting 95 to measure +z from the base plane
+        #     Z = 95-Z
+        #     return Z
+
+        # def world_to_pixel_coords(x,y):
+        #     #############################################
+        #     #       WORLD FRAME TO CAMERA FRAME              #
+        #     #############################################
+        #     # Extracting the origin of the camera frame (Following 4 quadrant system)
+        #     # pix_center=self.pixel_center_loc()
+        #     # X and Y locations in the RGB space in pixels with (0,0) at the robot base center
+        #     # Taking in the pixel values in camera frame and transforming to the world frame
+        #     world_value=np.array([x,y])
+        #     world_value=np.transpose(world_value)
+        #     # Extracting the affine matrix computed during camera calibration (Transform from RGB to World)
+        #     affine=self.return_affine()
+        #     affine=affine[0:2,0:2]
+        #     # Taking inverse to find the transform from world to rgb
+        #     affine=np.linalg.inv(affine)
+        #     # print('affine:',affine,'\nxy:',pixel_value)
+        #     # World x,y location corresponding to iamge frame x,y location
+        #     pixel_value=np.matmul(affine,world_value.T)
+        #     return (pixel_value)
+
         def find_z_at_xy(x,y):
             # Taking in the pixel values in camera frame and transforming to the kinect depth frame
             pixel_value=np.array([x,y])
@@ -722,16 +755,15 @@ class StateMachine():
                     x_drop=drop_coordinates[0][0]  # These are in world reference frame
                     y_drop=drop_coordinates[1][0]  # Hence no conversion to word coordinate frame as before
 
-                    z_drop=find_z_at_xy(x_drop,y_drop)
+                    z_drop=0
 
-                    world_value=pixel_to_world_coords(x_drop,y_drop)
-                    print("World coordinates of block dropped is",world_value)
+                    # print("World coordinates of block dropped is",world_value)
 
                     # Constructing the pose for pose 
 
-                    pose_drop_intermediate=[world_value.item(0)*10,world_value.item(1)*10,(z_drop+7)*10]
+                    pose_drop_intermediate=[x_drop*10, y_drop*10,(z_drop+7)*10]
                     down_states_intermediate = kine.IK(pose_drop_intermediate)
-                    down_states_intermediate[0][5]=np.arctan2(world_value.item(1),world_value.item(0))
+                    down_states_intermediate[0][5]=np.arctan2(y_drop,x_drop)
 
                     if down_states_intermediate is None:
                         print ("Cannot go to pose above the block location for dropping")
@@ -740,9 +772,9 @@ class StateMachine():
                         # print ("Z to drop up item 3 cm above is",z_drop+7)
                         execute_fast_movement(down_states_intermediate)
 
-                        pose_drop=[world_value.item(0)*10,world_value.item(1)*10,(z_drop+3)*10]
+                        pose_drop=[x_drop*10, y_drop*10,(z_drop+3)*10]
                         down_states = kine.IK(pose_drop)
-                        down_states[0][5]=np.arctan2(world_value.item(1),world_value.item(0))
+                        down_states[0][5]=np.arctan2(y_drop,x_drop)
                         if down_states is None:
                             print("Cannot go to pose to drop the block (block picked up")
                         else:
@@ -751,9 +783,9 @@ class StateMachine():
                             execute_slow_movement(down_states)
                             self.rexarm.toggle_gripper() # Opening the gripper
 
-                            pose_interm_up=[world_value.item(0)*10,world_value.item(1)*10,(z_drop+7)*10]
+                            pose_interm_up=[x_drop*10, y_drop*10,(z_drop+7)*10]
                             intermediate_up_states = kine.IK(pose_interm_up)
-                            intermediate_up_states[0][5]=np.arctan2(world_value.item(1),world_value.item(0))
+                            intermediate_up_states[0][5]=np.arctan2(y_drop,x_drop)
                             if intermediate_up_states is None:
                                 print("Cannot go to pose to drop the block (block picked up")
                             else:
@@ -868,7 +900,7 @@ class StateMachine():
         block_dist=[]
         for i in range(int(len(self.kinect.block_coordinates)/2)):
             block_dist.append(self.kinect.block_coordinates[2*i]**2+self.kinect.block_coordinates[2*i+1]**2)
-        pickorder = [i[0] for i in sorted(enumerate(block_dist), reverse=True, key=lambda x:x[1])]
+        pickorder = [i[0] for i in sorted(enumerate(block_dist), reverse=False, key=lambda x:x[1])]
         ordered_block_coordinates = []
         for i in pickorder:
             ordered_block_coordinates.append(self.kinect.block_coordinates[2*i])
@@ -887,8 +919,8 @@ class StateMachine():
         self.current_state = "Task 2"
         # Calling the block detection function to detect block contours
         self.block_detect()
-        # Denoting the location for dropping the block
-        drop_coordinates=np.array([[340],[340]])
+        # Denoting the location for dropping the block (in world coordinates (cm))
+        drop_coordinates=np.array([[0],[10]])
         count=0
         distance=0
 
@@ -897,8 +929,8 @@ class StateMachine():
             print("Drop coordinates for block No. ", i)
             print("Drop coordinates for block are ", block_coordinates)
             self.click_and_grab_task2(block_coordinates, drop_coordinates)
-            drop_coordinates=np.array([[350+distance],[360]])
-            distance=distance+200
+            drop_coordinates=np.array([[0+distance],[10]])
+            distance=distance+5
             count=count+1
 
         self.next_state = "idle"
