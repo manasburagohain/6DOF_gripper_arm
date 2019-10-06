@@ -144,12 +144,12 @@ class Kinect():
 
         # Converting the Camera frame from RGB to HSV
         # bgr_frame = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
 
         # Definining the HSV Values
         color_order=['yellow','orange','pink','black','blue','green','purple','red']
-        color_lower_array=np.array([[0,0,225],[103,90,210],[115,125,240],[0,20,20],[0,95,180],[35,5,125],[145,40,140],[115,130,160]])
-        color_higher_array=np.array([[100,120,255],[127,255,255],[140,183,255],[185,110,80],[15,145,230],[95,110,210],[170,100,170],[145,190,230]])
+        color_lower_array=np.array([[250,123,123],[123,148,55],[130,177,50],[95,125,120],[140,145,143],[136,110,130],[123,144,106],[87,160,70]])
+        color_higher_array=np.array([[255,132,132],[132,158,66],[143,188,60],[107,136,130],[150,156,152],[147,120,140],[132,155,117],[98,170,80]])
 
         # Extracting the H,S and V values at the center of the block in the RGB frame
         # Creating list to store the detected colors
@@ -183,7 +183,7 @@ class Kinect():
             if(self.block_coordinates.size==count*2):
                 break
 
-            i
+            
             # cv2.setMouseCallback("window",mouse_callback)
 
         print (color)

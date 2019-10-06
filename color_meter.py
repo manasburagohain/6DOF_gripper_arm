@@ -15,7 +15,7 @@ def mouse_callback(event,x,y,flags,param):
     v = hsv[y][x][2]
     print('2')
     output_rgb = "R:%d, G:%d, B:%d " % (r, g, b)
-    output_hsv = "H:%d, S:%d, V:%d" % (h, s, v)
+    output_hsv = "L:%d, A:%d, B:%d" % (h, s, v)
     location="X:%d, Y:%d" % (x,y)
 
     tmp = img.copy()
@@ -30,7 +30,7 @@ def mouse_callback(event,x,y,flags,param):
         print "bgr: (%d, %d, %d) \nhsv: (%d, %d, %d)" % (b,g,r,h,s,v)
 
 img = freenect.sync_get_video()[0]
-hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+hsv = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
 cv2.namedWindow("window",2)
 # cv2.imwrite('blah.jpg',hsv)
 # cv2.imshow("blah",img)

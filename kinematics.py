@@ -152,7 +152,7 @@ def IK(pose):
         #print(w2_theta/np.pi*180)
 
         # print(base_theta,shoulder_theta-np.pi/2,elbow_theta,0,w2_theta)
-        print("Angle in degrees",base_theta*180/np.pi, shoulder_theta*180/np.pi, elbow_theta*180/np.pi,w2_theta*180/np.pi)
+        # print("Angle in degrees",base_theta*180/np.pi, shoulder_theta*180/np.pi, elbow_theta*180/np.pi,w2_theta*180/np.pi)
 
         return [[base_theta,shoulder_theta-np.pi/2,elbow_theta,0,w2_theta,0]]
         pass
