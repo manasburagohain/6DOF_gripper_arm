@@ -550,6 +550,7 @@ class StateMachine():
                     self.rexarm.toggle_gripper() #close
 
                     ## Once the block has been picked the arm should open up to ensure block is properly gripped. This pose is defined by idlePos
+                    execute_slow_movement(execute_states)
                     idlePos = [[0.0, 0, 0.0, 0.0, -np.pi/4,0]]
                     execute_fast_movement(idlePos)
                     self.rexarm.toggle_gripper() # Opening the gripper
@@ -596,7 +597,7 @@ class StateMachine():
                                 # self.rexarm.toggle_gripper() # Opening the gripper
 
 
-                                idlePos = [[0.0, 0, 0.0, 0.0, -np.pi/4,0]]
+                                idlePos = [[0, np.pi/6, np.pi/6, 0.0, np.pi/6, 0.0]]
                                 execute_fast_movement(idlePos)
                                 self.rexarm.toggle_gripper() # Opening the gripper
                             # self.rexarm.toggle_gripper() # Closing the gripper
@@ -861,11 +862,20 @@ class StateMachine():
         # Calling the block detection function to detect block contours
         self.block_detect()
         # Denoting the location for dropping the block
-        drop_coordinates=np.array([[350],[350]])
+        drop_coordinates=np.array([[366],[292]])
         count=0
-
+        print(self.kinect.block_coordinates)
+        block_dist=[]
+        for i in range(int(len(self.kinect.block_coordinates)/2)):
+            block_dist.append(self.kinect.block_coordinates[2*i]**2+self.kinect.block_coordinates[2*i+1]**2)
+        pickorder = [i[0] for i in sorted(enumerate(block_dist), reverse=True, key=lambda x:x[1])]
+        ordered_block_coordinates = []
+        for i in pickorder:
+            ordered_block_coordinates.append(self.kinect.block_coordinates[2*i])
+            ordered_block_coordinates.append(self.kinect.block_coordinates[2*i+1])
+        print(ordered_block_coordinates)
         for i in range(len(self.kinect.block_coordinates)-2):
-            block_coordinates=np.array([[self.kinect.block_coordinates[i+count]],[self.kinect.block_coordinates[i+count+1]]])
+            block_coordinates=np.array([[ordered_block_coordinates[i+count]],[ordered_block_coordinates[i+count+1]]])
             self.click_and_grab_task1(block_coordinates, drop_coordinates)
             count=count+1
 
@@ -878,7 +888,7 @@ class StateMachine():
         # Calling the block detection function to detect block contours
         self.block_detect()
         # Denoting the location for dropping the block
-        drop_coordinates=np.array([[350],[350]])
+        drop_coordinates=np.array([[340],[340]])
         count=0
         distance=0
 

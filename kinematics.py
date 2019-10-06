@@ -126,12 +126,21 @@ def IK(pose):
         base_theta = atan2(y,x)
         #print(base_theta/np.pi*180)
 
-        # elbow angle theta2
-        phi3 = np.arctan2(l1-z,d)
-        phi2 = np.arctan2(l4-(l1-z),d)
-        m1_squared = d**2+(l4-(l1-z))**2
-        elbow_theta = np.pi-acos((l2**2 + l3**2 - m1_squared)/(2*l2*l3))
-        #print(elbow_theta/np.pi*180)
+        if z<=l1:
+            zl1=l1-z
+            # elbow angle theta2
+            phi2 = np.arctan2(l4-zl1,d)
+            m1_squared = d**2+(l4-zl1)**2
+            elbow_theta = np.pi-acos((l2**2 + l3**2 - m1_squared)/(2*l2*l3))
+            #print(elbow_theta/np.pi*180)
+        else:
+            zl1=z-l1
+            # elbow angle theta2
+            phi2 = np.arctan2(l4+zl1,d)
+            m1_squared = d**2+(l4+zl1)**2
+            elbow_theta = np.pi-acos((l2**2 + l3**2 - m1_squared)/(2*l2*l3))
+            #print(elbow_theta/np.pi*180)
+
 
         # shoulder angle theta1
         phi1 = elbow_theta - acos((m1_squared+l3**2-l2**2)/(2*l3*sqrt(m1_squared)))
