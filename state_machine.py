@@ -336,7 +336,7 @@ class StateMachine():
     def pixel_center_loc(self):
         return pixel_center
 
-    def find_z_at_xy(x,y):
+    def find_z_at_xy(self,x,y):
             # Taking in the pixel values in camera frame and transforming to the kinect depth frame
             pixel_value=np.array([x,y])
             # Converting 10 bit depth to real distance using provided analytical function
@@ -346,7 +346,7 @@ class StateMachine():
             Z = 95-Z
             return Z
 
-    def pixel_to_world_coords(x,y):
+    def pixel_to_world_coords(self,x,y):
             #############################################
             #       CAMERA FRAME TO WORLD FRAME         #
             #############################################
@@ -366,7 +366,7 @@ class StateMachine():
             world_value=np.matmul(affine,pixel_value.T)
             return (world_value)
 
-    def execute_fast_movement(pose_togo):
+    def execute_fast_movement(self,pose_togo):
             for i, wp in enumerate(pose_togo):
                 if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
                     pass
@@ -380,7 +380,7 @@ class StateMachine():
                     self.tp.execute_plan(plan_pts, plan_velos)
                     self.rexarm.pause(1)
 
-    def execute_slow_movement(pose_togo):
+    def execute_slow_movement(self,pose_togo):
         for i, wp in enumerate(pose_togo):
             if i==0 and wp==np.zeros(self.rexarm.num_joints).tolist():
                 pass

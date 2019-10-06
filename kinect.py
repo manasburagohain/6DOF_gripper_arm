@@ -148,8 +148,8 @@ class Kinect():
 
         # Definining the HSV Values
         color_order=['yellow','orange','pink','black','blue','green','purple','red']
-        color_lower_array=np.array([[250,123,123],[123,148,55],[130,177,50],[95,125,120],[140,145,143],[136,110,130],[123,144,106],[87,160,70]])
-        color_higher_array=np.array([[255,132,132],[132,158,66],[143,188,60],[107,136,130],[150,156,152],[147,120,140],[132,155,117],[98,170,80]])
+        color_lower_array=np.array([[220,70,100],[70,148,40],[95,160,60],[30,126,110],[100,140,130],[130,110,125],[85,140,106],[55,159,57]])
+        color_higher_array=np.array([[255,136,136],[130,180,66],[160,200,90],[110,140,135],[155,164,152],[153,120,141],[135,165,125],[110,183,79]])
 
         # Extracting the H,S and V values at the center of the block in the RGB frame
         # Creating list to store the detected colors
@@ -168,7 +168,7 @@ class Kinect():
             print("HSV value of pixel is",rgb_hsv_values)
             count=count+1
 
-
+            color_detected = False
             for j in range(len(color_order)):
                 # print (rgb_hsv_values[0]>=color_lower_array[int(j)][0])
                 # print (rgb_hsv_values[0]<=color_higher_array[int(j)][0])
@@ -176,9 +176,13 @@ class Kinect():
                 # print (rgb_hsv_values[1]<=color_higher_array[int(j)][1])
                 # print (rgb_hsv_values[2]>=color_lower_array[int(j)][2])
                 # print (rgb_hsv_values[2]<=color_higher_array[int(j)][2])
-
+                
                 if (rgb_hsv_values[0]>=color_lower_array[j][0] and rgb_hsv_values[0]<=color_higher_array[j][0]) and (rgb_hsv_values[1]>=color_lower_array[j][1] and rgb_hsv_values[1]<=color_higher_array[j][1]) and (rgb_hsv_values[2]>=color_lower_array[j][2] and rgb_hsv_values[2]<=color_higher_array[j][2]):
-                    color.append(color_order[j])
+                    color.append([color_order[j],self.block_coordinates[i+count-1],self.block_coordinates[i+count]])
+                    color_detected = True
+
+            if color_detected == False:
+                color.append(["no color detected",self.block_coordinates[i+count]])
             # print (color)
             if(self.block_coordinates.size==count*2):
                 break

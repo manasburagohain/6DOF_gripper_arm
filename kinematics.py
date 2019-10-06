@@ -190,14 +190,14 @@ def IK2(pose, alpha):
             m2 = f**2 + (z-l1+p)**2
         # The rest of IK are the same for both cases    
         if -1 <= (l2**2 + l3**2 - m2)/(2*l2*l3) <= 1: # arccos domain check
-                elbow_theta = np.pi-acos((l2**2 + l3**2 - m2)/(2*l2*l3))
-                phi1 = elbow_theta - acos((m2+l3**2-l2**2)/(2*l3*sqrt(m2)))
-                shoulder_theta = np.pi-(phi1+phi2)
-                w2_theta = np.pi-(elbow_theta-phi1+np.pi/2-phi2+alpha)
-                print("IK Configuration:", [base_theta*180/np.pi, shoulder_theta*180/np.pi, elbow_theta*180/np.pi, 0, w2_theta*180/np.pi, 0])
-                return [[base_theta, shoulder_theta-np.pi/2, elbow_theta, 0, w2_theta, 0]]
-            else: # arccos domain check false
-                return None
+            elbow_theta = np.pi-acos((l2**2 + l3**2 - m2)/(2*l2*l3))
+            phi1 = elbow_theta - acos((m2+l3**2-l2**2)/(2*l3*sqrt(m2)))
+            shoulder_theta = np.pi-(phi1+phi2)
+            w2_theta = np.pi-(elbow_theta-phi1+np.pi/2-phi2+alpha)
+            print("IK Configuration:", [base_theta*180/np.pi, shoulder_theta*180/np.pi, elbow_theta*180/np.pi, 0, w2_theta*180/np.pi, 0])
+            return [[base_theta, shoulder_theta-np.pi/2, elbow_theta, 0, w2_theta, 0]]
+        else: # arccos domain check false
+            return None
     else: # valid furthest range false
         return None
 
