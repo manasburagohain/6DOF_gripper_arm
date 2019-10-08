@@ -78,6 +78,8 @@ class StateMachine():
                 self.task2()
             if(self.next_state == "Task 3"):
                 self.task3()
+            if self.next_state == "Collect Traj":
+                self.collect_traj_data()
         
         if(self.current_state == "operation"):
             if(self.next_state == "idle"):
@@ -128,6 +130,12 @@ class StateMachine():
                 self.estop()
 
         if(self.current_state == "Task 3"):
+            if(self.next_state == "idle"):
+                self.idle()
+            if(self.next_state == "estop"):
+                self.estop()
+
+        if (self.current_state == "Collect Traj"):
             if(self.next_state == "idle"):
                 self.idle()
             if(self.next_state == "estop"):
@@ -1044,6 +1052,38 @@ class StateMachine():
             block_coordinates=np.array([[self.kinect.block_coordinates[i+count]],[self.kinect.block_coordinates[i+count+1]]])
             self.click_and_grab_task3(block_coordinates, drop_coordinates)
             count=count+1
+
+        self.next_state = "idle"
+        return None
+
+
+    def collect_traj_data(self):
+        self.status_message = "Collecting Trajectory Data"
+        self.current_state = "Collect Traj"
+        with open('traj_fast_not_smooth.txt', 'w') as file:
+            file.write("Fast Trajectory with Path Smoothing")
+        execute_states= np.array([[ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                                  [ 1.0, 0.8, 1.0, 0.5, 1.0, 0.0],
+                                  [-1.0,-0.8,-1.0,-0.5, -1.0, 0.0],
+                                  [-1.0, 0.8, 1.0, 0.5, 1.0, 0.0],
+                                  [1.0, -0.8,-1.0,-0.5, -1.0, 0.0],
+                                  [ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]])
+        execute_states.tolist()
+        self.status_message = "State: Execute - Following Set Path"
+        self.current_state = "execute"
+
+        for i, wp in enumerate(execute_states):
+            print(wp)
+            if i==0 and wp.tolist()==np.zeros(wp.shape).tolist():
+                pass
+            else:
+                initial_wp = self.tp.set_initial_wp()
+                final_wp = self.tp.set_final_wp(wp)
+                T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 0.5)
+                plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
+                self.tp.execute_plan(plan_pts, plan_velos)
+                self.rexarm.pause(1)
+
 
         self.next_state = "idle"
         return None

@@ -139,6 +139,8 @@ class Gui(QMainWindow):
         self.ui.btnUser4.clicked.connect(self.task_2)
         self.ui.btnUser5.setText("Task 3")
         self.ui.btnUser5.clicked.connect(self.task_2)
+        self.ui.btnUser6.setText("Traj Collect")
+        self.ui.btnUser6.clicked.connect(self.collect_traj_data)
         self.ui.sldrBase.valueChanged.connect(self.sliderChange)
         self.ui.sldrShoulder.valueChanged.connect(self.sliderChange)
         self.ui.sldrElbow.valueChanged.connect(self.sliderChange)
@@ -255,6 +257,9 @@ class Gui(QMainWindow):
 
     def task_3(self):
         self.sm.set_next_state("Task 3")
+
+    def collect_traj_data(self):
+        self.sm.set_next_state("Collect Traj")
 
     def record(self):
         if self.sm.current_state == "operation" :
