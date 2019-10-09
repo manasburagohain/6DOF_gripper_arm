@@ -40,7 +40,7 @@ class Kinect():
 
 
     def processVideoFrame(self):
-        cv2.drawContours(self.currentVideoFrame,self.block_contours,-1,(255,255,255),3)
+        cv2.drawContours(self.currentVideoFrame,self.block_contours,-1,(0,0,0),3)
 
 
     def captureDepthFrame(self):
@@ -129,6 +129,7 @@ class Kinect():
         TODO:
         Load camera intrinsic matrix from file.
         """
+
         pass
 
     def blockDetector(self):
@@ -144,6 +145,7 @@ class Kinect():
 
         # Converting the Camera frame from RGB to HSV
         # bgr_frame = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        cv2.imwrite('test_bgr.png',img)
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
 
         # Definining the HSV Values
@@ -236,6 +238,7 @@ class Kinect():
             contour_sizes = [(cv2.contourArea(contour), contour) for contour in contours if (cv2.contourArea(contour)>400 and cv2.contourArea(contour)<900)]
             # biggest_contour = max(contour_sizes, key=lambda x: x[0])[1]
             block_contours = []
+            box_contours = []
             block_coordinates=np.array([])
             # print(contours)
             for contour in contours:
@@ -257,6 +260,8 @@ class Kinect():
                 center=rect[0]
                 angle = rect[2]
                 cv2.drawContours(depth_frame,[box],0,(0,0,255),2)
+                box = np.asarray(box)
+                box_contours.append(box)
 
             # Marking the center of the box
                 depth_frame[int(center[1])-2:int(center[1])+2,int(center[0])-2:int(center[0])+2]=[0]
@@ -268,7 +273,7 @@ class Kinect():
 
                 block_coordinates=np.append(block_coordinates,[center[0],center[1]])
                 print("Block coordinates are", block_coordinates)
-                int_block_contours += block_contours
+                int_block_contours += box_contours
                 # print("Contours are", int_block_contours)
                 int_block_coordinates = np.append(int_block_coordinates,block_coordinates)
                 print("Block coordinates are", int_block_coordinates)

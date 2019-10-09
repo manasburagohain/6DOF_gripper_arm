@@ -35,10 +35,16 @@ def FK_dh(joint_angles,link):
     # Defining DH table parameters  
 
     # Distances are in mm
-    d1=122.14 
-    a2=105
-    a3=126.77
-    a4=122.12
+
+    d1=118
+    a2=99
+    a3=112
+    a4=109
+
+    # d1=122.14 
+    # a2=105
+    # a3=126.77
+    # a4=122.12
 
     a=np.array([0,a2,a3,a4])
     alpha=np.array([np.pi/2,0,0,0])
@@ -71,8 +77,9 @@ def FK_dh(joint_angles,link):
     phi=np.array([joint_angles[1]+joint_angles[2]+joint_angles[4]])
 
     # Extracting the required x,y and z elements from H matrix
-
+    #print(H)
     H=H[0:3,-1]
+    #print(H)
     np.append(H, phi) 
 
     return H

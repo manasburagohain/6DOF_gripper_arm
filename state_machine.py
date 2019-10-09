@@ -928,6 +928,32 @@ class StateMachine():
         self.current_state = "block_detect"
         self.kinect.detectBlocksInDepthImage()
         self.kinect.blockDetector()
+        #############################################
+        #       CAMERA FRAME TO WORLD FRAME         #
+        #############################################
+        # Extracting the origin of the camera frame (Following 4 quadrant system)
+        pix_center=self.pixel_center_loc()
+        # X and Y locations in the RGB space in pixels with (0,0) at the robot base center
+        count = 0
+        for i in range(self.kinect.block_coordinates.size - 2):
+            x = int(self.kinect.block_coordinates[i+count]) 
+            y = int(self.kinect.block_coordinates[i+count+1])
+            x=x-pix_center.item(0)
+            y=pix_center.item(1)-y
+            # Taking in the pixel values in camera frame and transforming to the world frame
+            pixel_value=np.array([x,y])
+            count = count+1
+            pixel_value=np.transpose(pixel_value)
+            # Extracting the affine matrix computed during camera calibration
+            affine=self.return_affine()
+            affine=affine[0:2,0:2]
+            # print('affine:',affine,'\nxy:',pixel_value)
+            # World x,y location corresponding to iamge frame x,y location
+            world_value=np.matmul(affine,pixel_value.T)
+            print("World block coords are", world_value)
+            if(self.kinect.block_coordinates.size==count*2):
+               break
+
         self.next_state = "idle"
 
     def FK_check(self):
@@ -1060,13 +1086,10 @@ class StateMachine():
     def collect_traj_data(self):
         self.status_message = "Collecting Trajectory Data"
         self.current_state = "Collect Traj"
-        with open('traj_fast_not_smooth.txt', 'w') as file:
-            file.write("Fast Trajectory with Path Smoothing")
-        execute_states= np.array([[ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                                  [ 1.0, 0.8, 1.0, 0.5, 1.0, 0.0],
+        with open('traj_fast_smooth.txt', 'w') as file:
+            file.write("Fast Trajectory with Path Smoothing\n")
+        execute_states= np.array([[ 1.0, 0.8, 1.0, 0.5, 1.0, 0.0],
                                   [-1.0,-0.8,-1.0,-0.5, -1.0, 0.0],
-                                  [-1.0, 0.8, 1.0, 0.5, 1.0, 0.0],
-                                  [1.0, -0.8,-1.0,-0.5, -1.0, 0.0],
                                   [ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]])
         execute_states.tolist()
         self.status_message = "State: Execute - Following Set Path"
@@ -1079,10 +1102,35 @@ class StateMachine():
             else:
                 initial_wp = self.tp.set_initial_wp()
                 final_wp = self.tp.set_final_wp(wp)
-                T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 0.5)
+                T = self.tp.calc_time_from_waypoints(initial_wp, final_wp, 1.5)
                 plan_pts, plan_velos = self.tp.generate_quintic_spline(initial_wp, final_wp,T)
-                self.tp.execute_plan(plan_pts, plan_velos)
-                self.rexarm.pause(1)
+                self.tp.execute_plan_collect(plan_pts, plan_velos)
+                #self.tp.execute_plan(plan_pts, plan_velos)
+                self.rexarm.pause(3)
+
+
+        self.next_state = "idle"
+        return None
+
+
+    def collect_traj_data_a(self):
+        self.status_message = "Collecting Trajectory Data"
+        self.current_state = "Collect Traj"
+        with open('traj_fast_not_smooth.txt','a') as f:
+                f.write("Start Here\n")
+        execute_states= np.array([[ 1.0, 0.8, 1.0, 0.5, 1.0, 0.0],
+                                  [-1.0,-0.8,-1.0,-0.5, -1.0, 0.0],
+                                  [ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]])
+        execute_states.tolist()
+        self.status_message = "State: Execute - Following Set Path"
+        self.current_state = "execute"
+
+        for i, wp in enumerate(execute_states):
+            self.rexarm.set_positions(wp)
+            self.rexarm.set_speeds([10]*self.rexarm.num_joints)
+            self.rexarm.pause(3)
+        with open('traj_fast_not_smooth.txt','a') as f:
+            f.write("End Here\n")
 
 
         self.next_state = "idle"

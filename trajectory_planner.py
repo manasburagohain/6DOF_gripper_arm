@@ -2,6 +2,7 @@ import numpy as np
 import time
 from math import *
 from kinect import Kinect
+from kinematics import *
 
 """
 TODO: build a trajectory generator and waypoint planner 
@@ -100,13 +101,25 @@ class TrajectoryPlanner():
         return plan_pts, plan_velos
 
 
-    def execute_plan(self, plan_pts, plan_velos, look_ahead=0):
+
+
+    def execute_plan_collect(self, plan_pts, plan_velos, look_ahead=12):
         #print(len(plan_pts))
-            
         for i in range(len(plan_pts)-look_ahead):
             self.rexarm.set_positions(plan_pts[i+look_ahead])
             self.rexarm.set_speeds(plan_velos[i])
-            with open('traj_fast_not_smooth.txt', 'a') as file:
-                file.write(str(self.rexarm.get_wrist_pose())+'\n')
+            with open('traj_fast_smooth.txt', 'a') as file:
+                posesall = self.rexarm.get_positions()
+                endeffectorpos = FK_dh(posesall,0)
+                file.write(str(endeffectorpos)+'\n')
+                #file.write(str(self.rexarm.get_wrist_pose())+'\n')
             self.rexarm.pause(self.dt)
+
+    def execute_plan(self, plan_pts, plan_velos, look_ahead=12):
+        #print(len(plan_pts))
+        for i in range(len(plan_pts)-look_ahead):
+            self.rexarm.set_positions(plan_pts[i+look_ahead])
+            self.rexarm.set_speeds(plan_velos[i])
+            self.rexarm.pause(self.dt)
+
 

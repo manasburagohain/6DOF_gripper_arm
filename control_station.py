@@ -21,6 +21,7 @@ from rexarm import Rexarm
 from kinect import Kinect
 from trajectory_planner import TrajectoryPlanner
 from state_machine import StateMachine
+from kinematics import *
 
 
 """ Radians to/from  Degrees conversions """
@@ -79,7 +80,14 @@ class DisplayThread(QThread):
         while True:
             self.updateStatusMessage.emit(self.sm.status_message)
             self.updateJointReadout.emit(self.rexarm.joint_angles_fb)
-            self.updateEndEffectorReadout.emit(self.rexarm.get_wrist_pose())    
+            self.updateEndEffectorReadout.emit(self.rexarm.get_wrist_pose())
+            #print(FK_dh(self.rexarm.get_positions()))
+            #print(np.matmul(FK_dh(self.rexarm.get_positions()),self.rexarm.get_positions()))
+            #print(self.rexarm.get_positions())
+            #with open('traj_fast_not_smooth.txt', 'a') as file:
+            #    file.write(str(np.matmul(FK_dh(self.rexarm.get_positions()),self.rexarm.get_positions()))+'\n')
+            #with open('velo_fast_not_smooth.txt', 'a') as file:
+            #    file.write(str(self.rexarm.get_speeds())+'\n')            
             time.sleep(0.1)
     
 """GUI Class"""
@@ -115,6 +123,7 @@ class Gui(QMainWindow):
         """Objects Using Other Classes"""
         self.kinect = Kinect()
         self.rexarm = Rexarm((base,shld,elbw,wrst,wrst2,wrst3), grip)
+        #self.rexarm = Rexarm((base,shld,elbw,wrst,wrst2), 0)
         self.tp = TrajectoryPlanner(self.rexarm, self.kinect)
         self.sm = StateMachine(self.rexarm, self.tp, self.kinect)
     
@@ -321,6 +330,15 @@ class Gui(QMainWindow):
         if ((x < MIN_X) or (x >= MAX_X) or (y < MIN_Y) or (y >= MAX_Y)):
             self.ui.rdoutMousePixels.setText("(-,-,-)")
             self.ui.rdoutMouseWorld.setText("(-,-,-)")
+            # posesall = self.rexarm.get_positions()
+            # endeffectorpos = FK_dh(posesall,0)
+            # if path.exists("traj_fast_not_smooth.txt"):
+            #     with open('traj_fast_not_smooth.txt','a') as f:
+            #         f.write(str(self.rexarm.get_wrist_pose())+'\n')
+            # else :
+            #     with open('traj_fast_not_smooth.txt','w') as f:
+            #         f.write("Traj Not Smooth\n")
+                
         else:
         	# Subtracting the X and Y distance corresponding to image origin frame to find cursor location with reference to imae frame
             x = x - MIN_X
