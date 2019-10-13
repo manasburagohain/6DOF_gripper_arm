@@ -151,7 +151,7 @@ def IK(pose):
 
         # shoulder angle theta1
         phi1 = elbow_theta - acos((m1_squared+l3**2-l2**2)/(2*l3*sqrt(m1_squared)))
-        shoulder_theta = np.pi-(phi1+phi2)
+        shoulder_theta = np.pi/2-(phi1+phi2)
         #print(shoulder_theta/np.pi*180)
 
         # wrist angle theta3
@@ -161,7 +161,7 @@ def IK(pose):
         # print(base_theta,shoulder_theta-np.pi/2,elbow_theta,0,w2_theta)
         # print("Angle in degrees",base_theta*180/np.pi, shoulder_theta*180/np.pi, elbow_theta*180/np.pi,w2_theta*180/np.pi)
 
-        return [[base_theta,shoulder_theta-np.pi/2,elbow_theta,0,w2_theta,0]]
+        return [[base_theta,shoulder_theta,elbow_theta,0,w2_theta,0]]
         pass
 
     else:
