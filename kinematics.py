@@ -1,9 +1,6 @@
 import numpy as np
 import sys
 from math import *
-#expm is a matrix exponential function
-# from scipy.linalg import expm
-# from se3 import *
 
 """ 
 TODO: Here is where you will write all of your kinematics functions 
@@ -13,9 +10,6 @@ There are some functions to start with, you may need to implement a few more
 
 def FK_dh(joint_angles,link):
     """
-    TODO: mplement this function
-    a1=0
-    d1
 
     Calculate forward kinematics for rexarm using DH convention
     return a transformation matrix representing the pose of the 
@@ -107,11 +101,8 @@ def IK(pose):
     Calculate inverse kinematics for rexarm
 
     return the required joint angles
-
     """
-
     # Inverse Kinematics Equations for Elbow Up Configuration
-
     # Extracting the required information from pose
    # Given link geometry
     l1=118
@@ -161,7 +152,7 @@ def IK(pose):
         # print(base_theta,shoulder_theta-np.pi/2,elbow_theta,0,w2_theta)
         # print("Angle in degrees",base_theta*180/np.pi, shoulder_theta*180/np.pi, elbow_theta*180/np.pi,w2_theta*180/np.pi)
 
-        return [[base_theta,shoulder_theta,elbow_theta,0,w2_theta,0]]
+        return [[base_theta,shoulder_theta+np.pi/2,elbow_theta,0,w2_theta,0]]
         pass
 
     else:
@@ -169,44 +160,44 @@ def IK(pose):
         return None
 
 
-def IK2(pose, alpha):
-    l1=118
-    l2=99
-    l3=112
-    l4=128
+# def IK2(pose, alpha):
+#     l1=118
+#     l2=99
+#     l3=112
+#     l4=128
 
-    x = pose[0]
-    y = pose[1]
-    z = pose[2]
-    alpha = alpha
-    print("IK Worksapce Location:", pose)
-    print("Arm Angle:", alpha)
-    d=sqrt(x**2+y**2) # gripper distance away from origin in xy plane
-    base_theta = atan2(y,x) # Base angle
-    far_range = l2+l3+sin(alpha)*l4
-    if d <= far_range: # Check valid furthest range
-        # Two cases z<l1, z>l1
-        if z<=l1: # z is low
-            p = l4*cos(alpha)-(l1-z)
-            theta2 = atan2(p/d)
-            m2 = d**2+p**2
-        else: # stack, z is high
-            p = l4*cos(alpha)
-            f = d-l4*sin(alpha)
-            theta2 = atan2((p+z-l1)/f)
-            m2 = f**2 + (z-l1+p)**2
-        # The rest of IK are the same for both cases    
-        if -1 <= (l2**2 + l3**2 - m2)/(2*l2*l3) <= 1: # arccos domain check
-            elbow_theta = np.pi-acos((l2**2 + l3**2 - m2)/(2*l2*l3))
-            phi1 = elbow_theta - acos((m2+l3**2-l2**2)/(2*l3*sqrt(m2)))
-            shoulder_theta = np.pi-(phi1+phi2)
-            w2_theta = np.pi-(elbow_theta-phi1+np.pi/2-phi2+alpha)
-            print("IK Configuration:", [base_theta*180/np.pi, shoulder_theta*180/np.pi, elbow_theta*180/np.pi, 0, w2_theta*180/np.pi, 0])
-            return [[base_theta, shoulder_theta-np.pi/2, elbow_theta, 0, w2_theta, 0]]
-        else: # arccos domain check false
-            return None
-    else: # valid furthest range false
-        return None
+#     x = pose[0]
+#     y = pose[1]
+#     z = pose[2]
+#     alpha = alpha
+#     print("IK Worksapce Location:", pose)
+#     print("Arm Angle:", alpha)
+#     d=sqrt(x**2+y**2) # gripper distance away from origin in xy plane
+#     base_theta = atan2(y,x) # Base angle
+#     far_range = l2+l3+sin(alpha)*l4
+#     if d <= far_range: # Check valid furthest range
+#         # Two cases z<l1, z>l1
+#         if z<=l1: # z is low
+#             p = l4*cos(alpha)-(l1-z)
+#             theta2 = atan2(p/d)
+#             m2 = d**2+p**2
+#         else: # stack, z is high
+#             p = l4*cos(alpha)
+#             f = d-l4*sin(alpha)
+#             theta2 = atan2((p+z-l1)/f)
+#             m2 = f**2 + (z-l1+p)**2
+#         # The rest of IK are the same for both cases    
+#         if -1 <= (l2**2 + l3**2 - m2)/(2*l2*l3) <= 1: # arccos domain check
+#             elbow_theta = np.pi-acos((l2**2 + l3**2 - m2)/(2*l2*l3))
+#             phi1 = elbow_theta - acos((m2+l3**2-l2**2)/(2*l3*sqrt(m2)))
+#             shoulder_theta = np.pi-(phi1+phi2)
+#             w2_theta = np.pi-(elbow_theta-phi1+np.pi/2-phi2+alpha)
+#             print("IK Configuration:", [base_theta*180/np.pi, shoulder_theta*180/np.pi, elbow_theta*180/np.pi, 0, w2_theta*180/np.pi, 0])
+#             return [[base_theta, shoulder_theta-np.pi/2, elbow_theta, 0, w2_theta, 0]]
+#         else: # arccos domain check false
+#             return None
+#     else: # valid furthest range false
+#         return None
 
 
 def get_euler_angles_from_T(T):
