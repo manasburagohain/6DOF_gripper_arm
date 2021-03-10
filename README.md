@@ -25,6 +25,8 @@ The whole pipeline can be explained by the following figure:
 1. `./control_station`
 1. `freenect-cppview` -- run this program and make sure the kinect is streaming both video and depth data
 
+Check the [final report](https://github.com/manasburagohain/armlab/blob/master/report/armlab.pdf) for detailed explanation and results.
+
 ### Directories and Codebase 
 
 | Files                 | Description   |
