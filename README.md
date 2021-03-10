@@ -18,7 +18,7 @@ A project for ROB 550: Robotics Systems Lab course taught in University of Michi
 
 The whole pipeline can be explained by the following figure:
 
-<img src="pipeline.PNG" width="500">
+<img src="pipeline.png" width="500">
 
 ### Running the code
 
